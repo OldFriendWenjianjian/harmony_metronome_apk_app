@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "Metronome module" },
+    { "name": "EntryAbility_desc", "value": "Metronome main ability" },
+    { "name": "EntryAbility_label", "value": "Metronome" }
+  ]
+}
