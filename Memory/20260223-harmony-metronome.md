@@ -137,3 +137,29 @@
 - 无编译/linter 错误（项目需在 DevEco Studio 中进行完整构建验证）
 - 注意：ForEach key 编码策略确保节拍圆点状态变更时正确刷新
 - 注意：Slider value 使用单向绑定 + onChange 回调，如拖动时 Slider 不更新可改用 $$ 双向绑定
+
+---
+
+## 静态验证测试（2026-02-23）
+
+**测试者**: tester  
+**测试范围**: 完整项目静态验证（配置/资源/代码逻辑）  
+**测试轮次**: 2 轮（第 1 轮完整 P0/P1/P2，第 2 轮 P0 重复验证）  
+
+**测试结果**: ✅ **全部通过（37/37 项）** — 无错误
+
+**关键测试覆盖**:
+- ✅ SDK 版本、模型版本、Stage 模型配置 — 完全一致
+- ✅ 后台权限与后台模式 — KEEP_BACKGROUND_RUNNING + audioPlayback 正确配置
+- ✅ 语音 WAV 资源 — 36 个文件（en/zh/ja 各 12 个），路径与代码约定一致
+- ✅ 分层图标资源 — AppScope 与 entry 均完整，startIcon 为普通 PNG
+- ✅ WAV 解析器逻辑 — 显式校验 RIFF/WAVE/fmt/data，错误处理到位
+- ✅ MetronomeEngine 核心参数 — accent/normal click 频率与幅度、相位连续切换、重音 bitmask
+- ✅ AudioRenderer streamInfo — F32LE/Mono/48kHz 完全正确
+- ✅ PreferencesManager 键名 — 7 个键名精确匹配，数值 clamp 与语言白名单验证正确
+- ✅ ViewModel 状态对齐 — 7 个状态字段、EngineParams 接口一一对应，persistSingle 键名完全一致
+- ✅ UI 控件完整性 — BPM/播放/拍号/重音/语音设置 5 个区域全部存在且绑定正确
+- ✅ @ohos.* 替换为 @kit.* — entry/src/main/ets 下 `@ohos.` 匹配数=0，全部使用 @kit.*
+- ✅ 文件行数限制 — 最大 448 行（Index.ets），远低于 1500 行限制
+
+**测试证据路径**: `AgentContext/20260223-harmony-metronome/test_report.md`
