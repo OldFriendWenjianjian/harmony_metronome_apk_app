@@ -47,26 +47,12 @@ export class AudioOutputService {
       this.renderer = await audio.createAudioRenderer(rendererOptions);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`AudioOutputService.init: failed to create AudioRenderer: ${err.message}`, { cause: err });
+      throw new Error(`AudioOutputService.init: failed to create AudioRenderer: ${err.message}`);
     }
 
-    try {
-      const streamInfo = await this.renderer.getAudioStreamInfo();
-      const rate = streamInfo?.samplingRate;
-      if (typeof rate === 'number' && rate > 0 && isFinite(rate)) {
-        this.streamSampleRate = rate;
-      } else {
-        hilog.warn(DOMAIN, TAG,
-          `getAudioStreamInfo returned unexpected samplingRate (${rate}), falling back to ${FALLBACK_SAMPLE_RATE}`);
-        this.streamSampleRate = FALLBACK_SAMPLE_RATE;
-      }
-    } catch (e) {
-      hilog.warn(DOMAIN, TAG,
-        `getAudioStreamInfo failed, using fallback rate ${FALLBACK_SAMPLE_RATE}: ${String(e)}`);
-      this.streamSampleRate = FALLBACK_SAMPLE_RATE;
-    }
-
-    hilog.info(DOMAIN, TAG, `Stream sample rate resolved to ${this.streamSampleRate}Hz`);
+    // Use the configured sample rate directly (48000Hz)
+    this.streamSampleRate = FALLBACK_SAMPLE_RATE;
+    hilog.info(DOMAIN, TAG, `Stream sample rate: ${this.streamSampleRate}Hz`);
 
     this.engine = new MetronomeEngine(this.streamSampleRate);
 
@@ -77,7 +63,7 @@ export class AudioOutputService {
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       hilog.error(DOMAIN, TAG, `VoiceSampleBank init failed: ${err.message}`);
-      throw new Error(`AudioOutputService.init: VoiceSampleBank init failed: ${err.message}`, { cause: err });
+      throw new Error(`AudioOutputService.init: VoiceSampleBank init failed: ${err.message}`);
     }
 
     this.engine.setVoiceSampleBank(this.voiceBank);
@@ -118,7 +104,7 @@ export class AudioOutputService {
       await this.renderer.start();
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`AudioOutputService.start: renderer.start() failed: ${err.message}`, { cause: err });
+      throw new Error(`AudioOutputService.start: renderer.start() failed: ${err.message}`);
     }
 
     this.playing = true;
@@ -182,9 +168,13 @@ export class AudioOutputService {
 
     const engineRef = this.engine;
 
-    this.renderer.on('writeData', (buffer: ArrayBuffer) => {
-      const floatView = new Float32Array(buffer);
-      engineRef.renderAudio(floatView, floatView.length);
-    });
+    try {
+      this.renderer.on('writeData', (buffer: ArrayBuffer) => {
+        const floatView = new Float32Array(buffer);
+        engineRef.renderAudio(floatView, floatView.length);
+      });
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, `Failed to register writeData callback: ${String(e)}`);
+    }
   }
 }

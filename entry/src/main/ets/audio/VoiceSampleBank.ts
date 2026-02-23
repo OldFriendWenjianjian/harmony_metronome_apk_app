@@ -42,7 +42,7 @@ export class VoiceSampleBank {
         } catch (e) {
           const err = e instanceof Error ? e : new Error(String(e));
           hilog.error(DOMAIN, TAG, `Failed to load ${path}: ${err.message}`);
-          throw new Error(`VoiceSampleBank.init failed loading '${path}': ${err.message}`, { cause: err });
+          throw new Error(`VoiceSampleBank.init failed loading '${path}': ${err.message}`);
         }
       }
     }
@@ -83,7 +83,7 @@ export class VoiceSampleBank {
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
         hilog.error(DOMAIN, TAG, `Resample failed for key '${key}': ${err.message}`);
-        throw new Error(`VoiceSampleBank.setStreamSampleRate failed for '${key}': ${err.message}`, { cause: err });
+        throw new Error(`VoiceSampleBank.setStreamSampleRate failed for '${key}': ${err.message}`);
       }
     }
 

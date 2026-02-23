@@ -1,0 +1,126 @@
+{
+  "HVIGOR_OHOS_PLUGIN": {
+    "MODULES": [
+      {
+        "MODULE_NAME": "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf",
+        "API_TYPE": "stageMode",
+        "INCLUDE_IN_BUILD": true,
+        "IS_COMMAND_LINE_ENTRY_MODULE": false,
+        "MODULE_TYPE": "entry",
+        "INCREMENTAL_TASKS": {
+          "COMPILE_ARKTS": false
+        },
+        "IS_INCREMENTAL_MODULE": false
+      }
+    ],
+    "NATIVE_COMPILER": "Default",
+    "IS_FULL_BUILD": true,
+    "BUILD_MODE": "release"
+  },
+  "HVIGOR": {
+    "IS_INCREMENTAL": true,
+    "IS_DAEMON": true,
+    "IS_PARALLEL": true,
+    "IS_HVIGORFILE_TYPE_CHECK": false,
+    "TASK_TIME": {
+      "APP": {
+        "PreBuildApp": 1625300,
+        "DuplicateDependencyCheck": 475400
+      },
+      "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf": {
+        "PreBuild": 228979600,
+        "CreateModuleInfo": 1789000,
+        "GenerateMetadata": 5399500,
+        "ConfigureCmake": 324900,
+        "MergeProfile": 5833600,
+        "CreateBuildProfile": 3552900,
+        "PreCheckSyscap": 606400,
+        "GeneratePkgContextInfo": 8475900,
+        "ProcessIntegratedHsp": 937300,
+        "BuildNativeWithCmake": 588900,
+        "MakePackInfo": 5186400,
+        "SyscapTransform": 2527700,
+        "ProcessProfile": 118054100,
+        "ProcessRouterMap": 6045900,
+        "ProcessShareConfig": 3860900,
+        "ProcessStartupConfig": 2585500,
+        "BuildNativeWithNinja": 2712200,
+        "ProcessResource": 10182200,
+        "GenerateLoaderJson": 24304200,
+        "ProcessLibs": 11084800,
+        "CompileResource": 2623514300,
+        "DoNativeStrip": 3234300,
+        "BuildJS": 4245800,
+        "CacheNativeLibs": 1365098100
+      }
+    },
+    "APIS": [
+      "getProperty"
+    ],
+    "CONFIG_EXPERIMENT": {
+      "ENABLE_MODULE_SKIP": false,
+      "ENABLE_CPP_FUNCTION_LEVEL_INCREMENTAL": false
+    },
+    "CONFIG_PROPERTIES": {},
+    "BUILD_ID": "202602240046151750",
+    "ERROR_MESSAGE": [
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      },
+      {
+        "CODE": "10505001",
+        "TIMESTAMP": "1771865192585"
+      }
+    ],
+    "TOTAL_TIME": 17427776000
+  }
+}

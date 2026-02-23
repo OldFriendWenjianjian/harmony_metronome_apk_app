@@ -32,8 +32,10 @@ struct Index {
       this.syncState();
     });
     this.syncState();
-    const ctx = getContext(this) as common.UIAbilityContext;
-    this.vm.init(ctx).catch((_: Object): void => {});
+    const ctx = AppStorage.get<common.UIAbilityContext>('uiAbilityContext');
+    if (ctx !== undefined) {
+      this.vm.init(ctx).catch((_: Object): void => {});
+    }
   }
 
   aboutToDisappear(): void {

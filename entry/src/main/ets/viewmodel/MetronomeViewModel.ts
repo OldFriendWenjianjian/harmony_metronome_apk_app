@@ -141,8 +141,7 @@ export class MetronomeViewModel {
       try { await this.bgService.stopBackgroundTask(this.context); } catch (_) { /* best-effort */ }
       const msg = e instanceof Error ? e.message : String(e);
       hilog.error(DOMAIN, TAG, `Audio start failed: ${msg}`);
-      throw new Error(`MetronomeViewModel.startPlay: audio start failed: ${msg}`,
-        { cause: e instanceof Error ? e : undefined });
+      throw new Error(`MetronomeViewModel.startPlay: audio start failed: ${msg}`);
     }
 
     this.notifyStateChange();

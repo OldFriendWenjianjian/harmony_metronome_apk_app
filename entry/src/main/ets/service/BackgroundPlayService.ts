@@ -40,8 +40,7 @@ export class BackgroundPlayService {
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       throw new Error(
-        `BackgroundPlayService.startBackgroundTask: failed to create WantAgent: ${err.message}`,
-        { cause: err }
+        `BackgroundPlayService.startBackgroundTask: failed to create WantAgent: ${err.message}`
       );
     }
 
@@ -54,8 +53,7 @@ export class BackgroundPlayService {
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       throw new Error(
-        `BackgroundPlayService.startBackgroundTask: startBackgroundRunning failed: ${err.message}`,
-        { cause: err }
+        `BackgroundPlayService.startBackgroundTask: startBackgroundRunning failed: ${err.message}`
       );
     }
 
@@ -75,8 +73,7 @@ export class BackgroundPlayService {
       hilog.error(DOMAIN, TAG,
         `stopBackgroundRunning failed: ${err.message}`);
       throw new Error(
-        `BackgroundPlayService.stopBackgroundTask: stopBackgroundRunning failed: ${err.message}`,
-        { cause: err }
+        `BackgroundPlayService.stopBackgroundTask: stopBackgroundRunning failed: ${err.message}`
       );
     }
 

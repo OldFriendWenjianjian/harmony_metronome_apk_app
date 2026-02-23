@@ -1,5 +1,5 @@
 import { preferences } from '@kit.ArkData';
-import { Context } from '@kit.AbilityKit';
+import { common } from '@kit.AbilityKit';
 
 const STORE_NAME: string = 'metronome_prefs';
 
@@ -36,13 +36,12 @@ export interface MetronomeSettings {
 export class PreferencesManager {
   private prefs: preferences.Preferences | null = null;
 
-  async init(context: Context): Promise<void> {
+  async init(context: common.Context): Promise<void> {
     try {
       this.prefs = await preferences.getPreferences(context, STORE_NAME);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`PreferencesManager.init failed for store '${STORE_NAME}': ${err.message}`,
-        { cause: err });
+      throw new Error(`PreferencesManager.init failed for store '${STORE_NAME}': ${err.message}`);
     }
   }
 
@@ -70,7 +69,7 @@ export class PreferencesManager {
       };
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`PreferencesManager.load failed: ${err.message}`, { cause: err });
+      throw new Error(`PreferencesManager.load failed: ${err.message}`);
     }
   }
 
@@ -89,7 +88,7 @@ export class PreferencesManager {
       await this.prefs.flush();
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`PreferencesManager.save failed: ${err.message}`, { cause: err });
+      throw new Error(`PreferencesManager.save failed: ${err.message}`);
     }
   }
 
@@ -102,8 +101,7 @@ export class PreferencesManager {
       await this.prefs.flush();
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      throw new Error(`PreferencesManager.saveSingle failed for key '${key}': ${err.message}`,
-        { cause: err });
+      throw new Error(`PreferencesManager.saveSingle failed for key '${key}': ${err.message}`);
     }
   }
 

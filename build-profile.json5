@@ -1,12 +1,27 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BC404320102D48F38AB8F393BCBCA7BD054F967033F8A340900888CDA5CFA8A996EF99B0EDF98E6",
+          "profile": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.p12",
+          "storePassword": "0000001B5C4379239E44B7E5613AEB16213AF65B02D3153891564EAA6214B437E9EDAB3FD6E02C31197D2B"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
         "signingConfig": "default",
         "compatibleSdkVersion": "5.0.0(12)",
-        "runtimeOS": "HarmonyOS"
+        "runtimeOS": "HarmonyOS",
+        "targetSdkVersion": "6.0.2(22)"
       }
     ]
   },
@@ -17,7 +32,9 @@
       "targets": [
         {
           "name": "default",
-          "applyToProducts": ["default"]
+          "applyToProducts": [
+            "default"
+          ]
         }
       ]
     }
