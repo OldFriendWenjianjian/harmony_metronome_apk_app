@@ -23,7 +23,13 @@
             "entities": ["entity.system.home"],
             "actions": ["action.system.home"]
           }
-        ]
+        ],
+        "backgroundModes": ["audioPlayback"]
+      }
+    ],
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING"
       }
     ]
   }

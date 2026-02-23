@@ -85,3 +85,33 @@
 - BackgroundPlayService 的 WantAgent 指向 EntryAbility，通知栏点击回到主界面
 - 两个服务均为无状态单例风格（由 ViewModel 持有实例），生命周期跟随页面/Ability
 - module.json5 的 requestPermissions (KEEP_BACKGROUND_RUNNING) 和 backgroundModes (audioPlayback) 由 TODO-4 集成时配置
+
+## TODO-4 实现记录
+
+### 公开接口约定
+
+**MetronomeViewModel** (`entry/src/main/ets/viewmodel/MetronomeViewModel.ts`):
+- `setOnStateChange(callback: StateChangeCallback): void` — 注册状态变更回调，页面在此回调中同步 @State
+- `init(context: UIAbilityContext): Promise<void>` — 初始化所有服务并从 Preferences 加载状态
+- `destroy(): Promise<void>` — 释放音频服务和后台任务
+- `togglePlay(): Promise<void>` — 播放/停止切换，协调 AudioOutputService + BackgroundPlayService
+- `adjustBpm(delta: number): void` — BPM 增减 (+1/-1/+5/-5)
+- `setBpm(value: number): void` — 设置 BPM (30-300，自动 clamp 和取整)
+- `setMeterPreset(num: number, den: number): void` — 设置预设拍号 (2/4, 3/4, 4/4, 6/8)
+- `setMeterNumerator(value: number): void` — 设置拍号分子 (1-12)
+- `nextDenominator() / prevDenominator()` — 步进切换分母 (1,2,4,8,16)
+- `toggleAccent(beatIndex: number): void` — 切换指定拍的重音
+- `setLanguage(lang: string): void` — 设置语言 (en/zh/ja)
+- `setFirstBeatOnly(value: boolean): void` — 首拍模式开关
+- `setVoiceOffsetMs(value: number): void` — 语音偏移量 (-200~+200)
+
+### 关键设计决策
+
+- ViewModel 是普通 class（非 @Observed），页面通过 StateChangeCallback 机制手动同步 @State 变量
+- 所有参数 setter 内部自动调用 syncEngineParams() + persistSingle()，实现"改即同步"
+- beat 回调从音频线程触发 notifyStateChange，通过 @State 更新驱动 UI 重绘
+- Index.ets 使用 ForEach 的状态编码 key（`${idx}_${accentBitmask}_${curBeat}`）确保节拍圆点正确刷新
+- UI 采用暗色主题（背景 #1A1A2E，卡片 #16213E）和高对比度色彩方案
+- module.json5 已添加 requestPermissions (KEEP_BACKGROUND_RUNNING) 和 backgroundModes (audioPlayback)
+- Scroll 使用 edgeEffect(EdgeEffect.Spring) 弹性回弹
+- 页面配置 pageTransition 滑入/淡入动画
