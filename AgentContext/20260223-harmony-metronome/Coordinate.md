@@ -27,3 +27,32 @@
 ## 待补充清单
 
 （暂无）
+
+## TODO-2 实现记录
+
+### 公开接口约定（供 TODO-3/4 使用）
+
+**VoiceSampleBank** (`entry/src/main/ets/audio/VoiceSampleBank.ts`):
+- `init(resMgr: resourceManager.ResourceManager, streamSampleRate: number): Promise<void>` — 加载全部 36 个 WAV 到内存
+- `getSample(language: string, beatNumber: number): Float32Array | null` — 同步获取缓存样本，beatNumber 1-based
+- `setStreamSampleRate(resMgr, newRate): Promise<void>` — 动态切换采样率并重采样
+- `isReady(): boolean`
+
+**MetronomeEngine** (`entry/src/main/ets/audio/MetronomeEngine.ts`):
+- `constructor(sampleRate: number)`
+- `setVoiceSampleBank(bank: VoiceSampleBank): void`
+- `updateParams(params: EngineParams): void` — 可在播放中调用，相位连续
+- `prepare(): void` — 预计算 click 波形，设置初始 framesPerBeat
+- `renderAudio(buffer: Float32Array, numFrames: number): void` — 由 AudioRenderer callback 调用
+- `reset(): void` — 停止时调用
+- `onBeat(callback: BeatCallback): void` — 注册节拍回调（UI 用）
+- `getCurrentBeat(): number`
+
+### 关键设计决策
+
+- WAV 解析器手动扫描 chunks（跳过 LIST/fact 等），不依赖固定偏移
+- 保留原始 PCM 数据在 rawCache 中，切换采样率时不需重新读 rawfile
+- Voice 触发使用 collectVoiceTriggers 预扫描机制，支持负偏移 lookahead（最大 0.2s 或偏移量取较大值）
+- 新 voice 触发时截断旧 voice（不叠加），避免多声道混乱
+- renderAudio 内部零 I/O，所有数据预加载
+- BPM/meterDenominator 变化时重算 framesPerBeat 并 nextBeatFrame = totalFramesRendered + newFramesPerBeat（相位连续）

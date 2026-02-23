@@ -36,7 +36,37 @@
 11. 创建 ohosTest 完整骨架（6 个文件）
 12. 清理临时图标生成脚本
 
+### TODO-2: VoiceSampleBank + MetronomeEngine（2026-02-23）
+
+**产出物清单：**
+- `entry/src/main/ets/audio/VoiceSampleBank.ts`（257 行）— WAV 解析 + 线性插值重采样 + 缓存
+- `entry/src/main/ets/audio/MetronomeEngine.ts`（336 行）— 帧级节拍调度 + click 波形 + voice 混合
+
+**关键设计决策：**
+- WAV 解析器逐 chunk 扫描，支持 fmt 和 data 之间有 LIST/fact 等额外 chunks
+- 支持 8/16/24/32 bit PCM，自动下混多声道为单声道
+- rawCache 保留原始 PCM 用于动态采样率切换（避免重新读 rawfile）
+- 线性插值重采样：ratio = srcRate/tgtRate，逐输出帧计算 srcPos 并在相邻样本间插值
+- MetronomeEngine.renderAudio 每帧检查 globalFrame >= nextBeatFrame 触发节拍
+- Click 波形预计算：accent 1000Hz/0.8amp，normal 800Hz/0.5amp，30ms 指数衰减
+- Voice 偏移通过 collectVoiceTriggers 预扫描实现：正偏移延后、负偏移 lookahead
+- 相位连续 BPM 切换：nextBeatFrame = totalFramesRendered + newFramesPerBeat
+- 重音 bitmask 使用无符号右移（>>>）避免负数符号扩展
+- beatCallback 包裹 try/catch 确保回调异常不中断音频线程
+
+## 实现步骤
+
+### TODO-2 步骤记录
+1. 确认 audio/ 目录存在（已由 TODO-1 创建）
+2. 实现 VoiceSampleBank.ts：WAV 解析（parseWav）、Float32 转换（readSampleAsFloat）、线性插值重采样（resampleLinear）、缓存管理
+3. 实现 MetronomeEngine.ts：EngineParams/BeatEventInfo 接口、click 波形生成（generateSineDecay）、renderAudio 主循环、collectVoiceTriggers 语音触发、handleParamChanges 相位连续切换
+4. 验证文件行数（257 + 336，均 < 1500）
+5. 无 linter 错误
+
 ## 错误记录和解决方法
 
 ### TODO-1
 - 无编译/运行时错误（项目需在 DevEco Studio 中构建，此阶段仅创建文件结构）
+
+### TODO-2
+- 无编译/linter 错误。项目需在 DevEco Studio 中进行完整构建验证。
