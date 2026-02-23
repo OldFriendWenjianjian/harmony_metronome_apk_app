@@ -1,0 +1,19 @@
+# Build outputs
+/entry/build/
+/build/
+
+# IDE
+/.idea/
+*.iml
+
+# Hvigor cache
+/.hvigor/
+
+# Node modules
+/node_modules/
+/oh_modules/
+oh-package-lock.json5
+
+# OS
+.DS_Store
+Thumbs.db
