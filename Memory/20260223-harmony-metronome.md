@@ -63,6 +63,33 @@
 4. 验证文件行数（257 + 336，均 < 1500）
 5. 无 linter 错误
 
+### TODO-3: AudioOutputService + BackgroundPlayService（2026-02-23）
+
+**产出物清单：**
+- `entry/src/main/ets/audio/AudioOutputService.ts`（~160 行）— AudioRenderer callback 模式封装
+- `entry/src/main/ets/service/BackgroundPlayService.ts`（~90 行）— AUDIO_PLAYBACK 长时任务管理
+
+**关键设计决策：**
+- AudioRenderer 配置：SAMPLE_FORMAT_F32LE / CHANNEL_1 / SAMPLE_RATE_48000 / STREAM_USAGE_MUSIC
+- 采样率获取策略：优先 renderer.getAudioStreamInfo()，失败时 fallback 48000Hz
+- writeData 回调捕获 engineRef 本地引用，避免重复检查 this.engine 可空性
+- init() 中一次性完成 renderer 创建 + engine 构建 + voiceBank 加载 + callback 注册
+- start() 中先 prepare() 再 reset() 后 renderer.start()，确保每次播放从干净状态开始
+- stop() 先 renderer.stop() 再 engine.reset()，保证回调停止后才清除引擎状态
+- release() 先 stop 再 release renderer，清空所有引用
+- BackgroundPlayService 使用 wantAgent 创建通知栏入口，指向 EntryAbility
+- startBackgroundRunning 使用 BackgroundMode.AUDIO_PLAYBACK
+- 两个服务均做了重复调用保护（幂等性）和完整错误链传播
+
+## 实现步骤
+
+### TODO-3 步骤记录
+1. 确认 audio/ 目录已存在，创建 service/ 目录
+2. 实现 AudioOutputService.ts：AudioRenderer 创建、采样率获取、MetronomeEngine + VoiceSampleBank 初始化、writeData 回调注册、start/stop/release 生命周期
+3. 实现 BackgroundPlayService.ts：WantAgent 创建、AUDIO_PLAYBACK 长时任务申请/释放、状态管理
+4. 验证无 linter 错误
+5. 更新 Progress.md、Coordinate.md、Memory 文档
+
 ## 错误记录和解决方法
 
 ### TODO-1
@@ -70,3 +97,7 @@
 
 ### TODO-2
 - 无编译/linter 错误。项目需在 DevEco Studio 中进行完整构建验证。
+
+### TODO-3
+- 无 linter 错误。项目需在 DevEco Studio 中进行完整构建验证。
+- 注意：module.json5 需要 TODO-4 配置 requestPermissions 和 backgroundModes 才能使后台任务生效

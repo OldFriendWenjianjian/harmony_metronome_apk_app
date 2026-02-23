@@ -56,3 +56,32 @@
 - 新 voice 触发时截断旧 voice（不叠加），避免多声道混乱
 - renderAudio 内部零 I/O，所有数据预加载
 - BPM/meterDenominator 变化时重算 framesPerBeat 并 nextBeatFrame = totalFramesRendered + newFramesPerBeat（相位连续）
+
+## TODO-3 实现记录
+
+### 公开接口约定（供 TODO-4 使用）
+
+**AudioOutputService** (`entry/src/main/ets/audio/AudioOutputService.ts`):
+- `init(context: common.UIAbilityContext): Promise<void>` — 创建 AudioRenderer (callback/F32/Mono/48kHz)、MetronomeEngine、VoiceSampleBank 并完成初始化
+- `getEngine(): MetronomeEngine | null` — 获取引擎引用，供 ViewModel 调用 updateParams/onBeat
+- `getVoiceBank(): VoiceSampleBank | null` — 获取语音样本库引用
+- `getSampleRate(): number` — 返回实际流采样率
+- `start(): Promise<void>` — 调用 engine.prepare() + reset() 后启动 renderer
+- `stop(): Promise<void>` — 停止 renderer 并 reset engine
+- `release(): Promise<void>` — 释放所有资源
+- `isPlaying(): boolean` — 状态查询
+
+**BackgroundPlayService** (`entry/src/main/ets/service/BackgroundPlayService.ts`):
+- `startBackgroundTask(context: common.UIAbilityContext): Promise<void>` — 申请 AUDIO_PLAYBACK 长时任务
+- `stopBackgroundTask(context: common.UIAbilityContext): Promise<void>` — 释放长时任务
+- `isRunning(): boolean` — 状态查询
+
+### 关键设计决策
+
+- AudioRenderer 使用 writeData callback 模式，在回调中零分配地填充 Float32Array
+- 采样率通过 renderer.getAudioStreamInfo() 获取实际值，fallback 到 48000Hz
+- init 时即完成 VoiceSampleBank 加载和 Engine 绑定，start 时只做 prepare/reset/start
+- writeData 回调内捕获 engine 引用（engineRef）避免闭包捕获 this 带来的可空性问题
+- BackgroundPlayService 的 WantAgent 指向 EntryAbility，通知栏点击回到主界面
+- 两个服务均为无状态单例风格（由 ViewModel 持有实例），生命周期跟随页面/Ability
+- module.json5 的 requestPermissions (KEEP_BACKGROUND_RUNNING) 和 backgroundModes (audioPlayback) 由 TODO-4 集成时配置
