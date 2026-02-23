@@ -74,7 +74,6 @@ export class BackgroundPlayService {
       const err = e instanceof Error ? e : new Error(String(e));
       hilog.error(DOMAIN, TAG,
         `stopBackgroundRunning failed: ${err.message}`);
-      this.running = false;
       throw new Error(
         `BackgroundPlayService.stopBackgroundTask: stopBackgroundRunning failed: ${err.message}`,
         { cause: err }

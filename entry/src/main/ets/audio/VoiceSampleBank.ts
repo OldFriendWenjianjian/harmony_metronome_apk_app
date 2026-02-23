@@ -148,6 +148,10 @@ function parseWav(data: Uint8Array, sourcePath: string): RawPcmData {
     } else if (chunkId === 'data') {
       dataOffset = offset + 8;
       dataSize = chunkSize;
+      if (dataOffset + dataSize > data.length) {
+        hilog.warn(DOMAIN, TAG,
+          `data chunk size (${dataSize}) exceeds file size in '${sourcePath}', will use available data`);
+      }
       break;
     }
 

@@ -73,6 +73,11 @@ export class MetronomeEngine {
   private activeVoiceSample: Float32Array | null = null;
   private voicePlaybackPos: number = -1;
 
+  // Pre-allocated voice trigger buffers (reused across renderAudio calls to avoid GC)
+  private vtFrames: number[] = [];
+  private vtSamples: (Float32Array | null)[] = [];
+  private vtCount: number = 0;
+
   // Beat callback
   private beatCallback: BeatCallback | null = null;
 
@@ -115,8 +120,8 @@ export class MetronomeEngine {
 
     this.handleParamChanges();
 
-    // Collect voice triggers for this buffer window (including lookahead for negative offset)
-    const voiceTriggers = this.collectVoiceTriggers(frames);
+    this.collectVoiceTriggers(frames);
+    let vtIdx = 0;
 
     for (let i = 0; i < frames; i++) {
       let sample: number = 0.0;
@@ -151,11 +156,14 @@ export class MetronomeEngine {
         this.clickPlaybackPos++;
       }
 
-      // Check voice trigger at this frame position
-      const trigger = voiceTriggers.get(i);
-      if (trigger !== undefined) {
-        this.activeVoiceSample = trigger;
-        this.voicePlaybackPos = 0;
+      // Check voice trigger at this frame position (using pre-allocated arrays)
+      if (vtIdx < this.vtCount && i === this.vtFrames[vtIdx]) {
+        const triggerSample = this.vtSamples[vtIdx];
+        if (triggerSample !== null) {
+          this.activeVoiceSample = triggerSample;
+          this.voicePlaybackPos = 0;
+        }
+        vtIdx++;
       }
 
       // Mix voice
@@ -234,26 +242,22 @@ export class MetronomeEngine {
   /**
    * Scans the current buffer window (and a lookahead region for negative
    * voice offsets) to determine which buffer-local frame indices should
-   * start voice playback.
+   * start voice playback. Populates the pre-allocated vtFrames/vtSamples
+   * arrays to avoid per-call Map allocation and GC pressure.
    *
-   * Returns a map: bufferLocalFrameIndex → voice Float32Array to start.
    * When a new voice triggers, it truncates any previously playing voice.
    */
-  private collectVoiceTriggers(numFrames: number): Map<number, Float32Array> {
-    const triggers = new Map<number, Float32Array>();
+  private collectVoiceTriggers(numFrames: number): void {
+    this.vtCount = 0;
 
     if (this.voiceSampleBank === null || !this.voiceSampleBank.isReady()) {
-      return triggers;
+      return;
     }
 
     const offsetFrames = Math.round(this.params.voiceOffsetMs / 1000.0 * this.sampleRate);
 
-    // Determine scan range: we need to find beats within a window that,
-    // after applying voice offset, would start voice playback inside this buffer.
-    //
-    // For positive offset: voice starts AFTER beat → look at beats in this buffer
-    // For negative offset: voice starts BEFORE beat → we need lookahead to find
-    //   beats that are slightly ahead of this buffer window
+    // For negative offset: voice starts BEFORE beat → lookahead to find
+    // beats slightly ahead of this buffer window
     const lookaheadFrames = offsetFrames < 0
       ? Math.max(Math.abs(offsetFrames), Math.floor(this.sampleRate * 0.2))
       : 0;
@@ -261,12 +265,9 @@ export class MetronomeEngine {
     const scanStart = this.totalFramesRendered;
     const scanEnd = this.totalFramesRendered + numFrames + lookaheadFrames;
 
-    // Walk through future beats within the scan range
     let beatFrame = this.nextBeatFrame;
     let beatInMeasure = this.currentBeatInMeasure;
 
-    // Also check if the current nextBeatFrame might be behind totalFramesRendered
-    // (shouldn't happen, but guard against it)
     if (beatFrame < scanStart && this.framesPerBeat > 0) {
       const stepsNeeded = Math.ceil((scanStart - beatFrame) / this.framesPerBeat);
       beatFrame += stepsNeeded * this.framesPerBeat;
@@ -277,18 +278,23 @@ export class MetronomeEngine {
       const shouldPlayVoice = !this.params.firstBeatOnly || beatInMeasure === 0;
 
       if (shouldPlayVoice) {
-        // Voice sample for this beat's position (1-based beat number)
         const voiceBeatNumber = beatInMeasure + 1;
         const voiceSample = this.voiceSampleBank.getSample(this.params.language, voiceBeatNumber);
 
         if (voiceSample !== null) {
-          // The buffer-local frame where voice playback should begin
           const voiceStartGlobal = beatFrame + offsetFrames;
           const localFrame = voiceStartGlobal - this.totalFramesRendered;
 
-          // Only if the voice start falls within this buffer
           if (localFrame >= 0 && localFrame < numFrames) {
-            triggers.set(localFrame, voiceSample);
+            const idx = this.vtCount;
+            if (idx < this.vtFrames.length) {
+              this.vtFrames[idx] = localFrame;
+              this.vtSamples[idx] = voiceSample;
+            } else {
+              this.vtFrames.push(localFrame);
+              this.vtSamples.push(voiceSample);
+            }
+            this.vtCount++;
           }
         }
       }
@@ -296,8 +302,6 @@ export class MetronomeEngine {
       beatFrame += this.framesPerBeat;
       beatInMeasure = (beatInMeasure + 1) % this.params.meterNumerator;
     }
-
-    return triggers;
   }
 
   // ── Private: utility ────────────────────────────────────────────────

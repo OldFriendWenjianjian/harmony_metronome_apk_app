@@ -111,8 +111,8 @@ export class AudioOutputService {
       throw new Error('AudioOutputService.start: engine not initialized — call init() first');
     }
 
-    this.engine.prepare();
     this.engine.reset();
+    this.engine.prepare();
 
     try {
       await this.renderer.start();

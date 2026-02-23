@@ -163,3 +163,37 @@
 - ✅ 文件行数限制 — 最大 448 行（Index.ets），远低于 1500 行限制
 
 **测试证据路径**: `AgentContext/20260223-harmony-metronome/test_report.md`
+
+---
+
+## Code Review 修复（2026-02-23）
+
+**修复者**: fixer (v0)  
+**来源**: `AgentContext/20260223-harmony-metronome/CodeReview-Report.md`
+
+### FIX-2 [P1] 首拍延迟 Bug — 已修复
+- **文件**: `entry/src/main/ets/audio/AudioOutputService.ts`
+- **根因**: `start()` 先调用 `prepare()` 再 `reset()`，`reset()` 将 `lastBpm` 置零，导致首次 `renderAudio()` 中 `handleParamChanges()` 检测到参数变更（120 != 0），将 `nextBeatFrame` 设为 `totalFramesRendered + framesPerBeat`，首拍被延迟一整拍
+- **修复**: 将调用顺序改为先 `reset()` 再 `prepare()`，使 `prepare()` 在干净状态后设置 `lastBpm = params.bpm`，首次 `renderAudio()` 不触发参数变更，`nextBeatFrame` 保持为 0，首拍立即触发
+
+### FIX-4 [P1] renderAudio 中的 Map 分配 — 已修复
+- **文件**: `entry/src/main/ets/audio/MetronomeEngine.ts`
+- **根因**: `collectVoiceTriggers()` 每次调用创建新的 `Map<number, Float32Array>` 对象，在音频回调高频调用下产生 GC 压力
+- **修复**: 
+  - 添加预分配成员变量 `vtFrames: number[]`、`vtSamples: (Float32Array | null)[]`、`vtCount: number`
+  - `collectVoiceTriggers` 改为 `void` 返回，内部复用预分配数组（`vtCount` 重置 + 已有槽位直接赋值 + 超出时 push 扩容）
+  - 渲染循环中用索引遍历 `vtFrames[vtIdx]` 替代 `Map.get(i)`，零分配
+
+### FIX-5 [P2] 停止后台任务失败时状态失真 — 已修复
+- **文件**: `entry/src/main/ets/service/BackgroundPlayService.ts`
+- **根因**: `stopBackgroundTask` 的 `catch` 块中将 `this.running = false`，但此时后台任务实际可能仍在运行，状态与实际不一致
+- **修复**: 移除 `catch` 块中的 `this.running = false`，仅在成功停止后（catch 之后）设置 `false`；异常路径保持 `running = true` 反映实际状态
+
+### FIX-6 [P2] WAV data chunk 越界未校验 — 已修复
+- **文件**: `entry/src/main/ets/audio/VoiceSampleBank.ts`
+- **根因**: 解析 data chunk 后未校验 `dataOffset + dataSize` 是否超过文件大小，`Math.min` 静默截断可能掩盖损坏文件
+- **修复**: 在 data chunk 解析处添加显式越界检查，超出时通过 `hilog.warn` 输出警告（不抛异常，因部分截断文件仍可使用）
+
+### 跳过的项
+- **FIX-1 [P1]**: 文档层面问题，已有 TestSteps.md 和 test_report.md 覆盖
+- **FIX-3 [P1]**: HarmonyOS ArkTS 单线程 JS 运行时，AudioRenderer writeData callback 与 UI 在同一事件循环，无真正多线程竞态
