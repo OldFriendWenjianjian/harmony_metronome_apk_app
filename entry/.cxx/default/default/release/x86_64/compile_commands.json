@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/.cxx/default/default/release/x86_64",
+  "command": "C:\\PROGRA~1\\Huawei\\DEVECO~1\\sdk\\default\\OPENHA~1\\native\\llvm\\bin\\CLANG_~1.EXE --target=x86_64-linux-ohos --gcc-toolchain=\"C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/llvm\" --sysroot=\"C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot\" -Dmetronome_native_EXPORTS -I\"C:/Program Files/Huawei/DevEco Studio/sdk/default/hms/native/sysroot/usr/include\" -IC:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/src/main/cpp -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -Wa,--noexecstack -Wformat -Werror=format-security   -D__MUSL__ -O2 -DNDEBUG  -std=gnu++17 -fPIC -o CMakeFiles\\metronome_native.dir\\napi_init.cpp.o -c C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\cpp\\napi_init.cpp",
+  "file": "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\cpp\\napi_init.cpp",
+  "output": "CMakeFiles\\metronome_native.dir\\napi_init.cpp.o"
+},
+{
+  "directory": "C:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/.cxx/default/default/release/x86_64",
+  "command": "C:\\PROGRA~1\\Huawei\\DEVECO~1\\sdk\\default\\OPENHA~1\\native\\llvm\\bin\\CLANG_~1.EXE --target=x86_64-linux-ohos --gcc-toolchain=\"C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/llvm\" --sysroot=\"C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot\" -Dmetronome_native_EXPORTS -I\"C:/Program Files/Huawei/DevEco Studio/sdk/default/hms/native/sysroot/usr/include\" -IC:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/src/main/cpp -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -Wa,--noexecstack -Wformat -Werror=format-security   -D__MUSL__ -O2 -DNDEBUG  -std=gnu++17 -fPIC -o CMakeFiles\\metronome_native.dir\\native_metronome_engine.cpp.o -c C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\cpp\\native_metronome_engine.cpp",
+  "file": "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\cpp\\native_metronome_engine.cpp",
+  "output": "CMakeFiles\\metronome_native.dir\\native_metronome_engine.cpp.o"
+}
+]

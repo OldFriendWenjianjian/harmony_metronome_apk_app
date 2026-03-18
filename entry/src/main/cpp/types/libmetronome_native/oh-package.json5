@@ -1,0 +1,7 @@
+{
+  "modelVersion": "6.0.2",
+  "name": "libmetronome_native",
+  "version": "1.0.0",
+  "description": "Native metronome render module",
+  "types": "./index.d.ts"
+}

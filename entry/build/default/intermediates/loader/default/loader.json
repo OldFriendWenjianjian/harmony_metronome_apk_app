@@ -19,5 +19,8 @@
   "updateVersionInfo": {},
   "customizedHar": false,
   "anBuildOutPut": "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\build\\default\\intermediates\\loader_out\\default\\an\\arm64-v8a",
-  "anBuildMode": "type"
+  "anBuildMode": "type",
+  "patchConfig": {
+    "changedFileList": "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\build\\default\\intermediates\\patch\\default\\changedFileList.json"
+  }
 }

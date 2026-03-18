@@ -20,6 +20,24 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library" exported="" scope="PROVIDED">
+      <library name="Native-HarmonyOS-6.0.2(hms)" type="CPP_LIBRARY">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$APPLICATION_HOME_DIR$/sdk/default/hms/native/sysroot" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="" scope="PROVIDED">
+      <library name="Native-HarmonyOS-6.0.2(openharmony)" type="CPP_LIBRARY">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$APPLICATION_HOME_DIR$/sdk/default/openharmony/native/sysroot" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="" scope="PROVIDED">
       <library name="ArkTS-HarmonyOS-6.0.2(openharmony)" type="ArkUI">
         <CLASSES />
         <JAVADOC />

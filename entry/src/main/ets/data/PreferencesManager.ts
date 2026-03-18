@@ -10,7 +10,8 @@ const KEYS = {
   ACCENT_BITMASK: 'accent_bitmask',
   LANGUAGE: 'language',
   FIRST_BEAT_ONLY: 'first_beat_only',
-  VOICE_OFFSET_MS: 'voice_offset_ms'
+  VOICE_OFFSET_MS: 'voice_offset_ms',
+  PRIVACY_ACCEPTED: 'privacy_accepted'
 } as const;
 
 const DEFAULTS = {
@@ -18,7 +19,7 @@ const DEFAULTS = {
   meterNumerator: 4,
   meterDenominator: 4,
   accentBitmask: 0x1,
-  language: 'en',
+  language: 'zh',
   firstBeatOnly: true,
   voiceOffsetMs: 0
 };
@@ -107,6 +108,24 @@ export class PreferencesManager {
 
   getDefaults(): MetronomeSettings {
     return { ...DEFAULTS };
+  }
+
+  // 隐私政策同意状态单独封装，避免页面直接依赖底层键名。
+  async hasAcceptedPrivacyPolicy(): Promise<boolean> {
+    if (!this.prefs) {
+      return false;
+    }
+    try {
+      const accepted = await this.prefs.get(KEYS.PRIVACY_ACCEPTED, false) as boolean;
+      return typeof accepted === 'boolean' ? accepted : false;
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      throw new Error(`PreferencesManager.hasAcceptedPrivacyPolicy failed: ${err.message}`);
+    }
+  }
+
+  async setPrivacyPolicyAccepted(accepted: boolean): Promise<void> {
+    await this.saveSingle(KEYS.PRIVACY_ACCEPTED, accepted);
   }
 }
 

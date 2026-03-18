@@ -23,7 +23,7 @@ const DEFAULT_PARAMS: EngineParams = {
   meterNumerator: 4,
   meterDenominator: 4,
   accentBitmask: 0x1,
-  language: 'en',
+  language: 'zh',
   firstBeatOnly: true,
   voiceOffsetMs: 0
 };
@@ -77,6 +77,9 @@ export class MetronomeEngine {
   private vtFrames: number[] = [];
   private vtSamples: (Float32Array | null)[] = [];
   private vtCount: number = 0;
+  private pendingVoiceFrames: number[] = [];
+  private pendingVoiceSamples: (Float32Array | null)[] = [];
+  private pendingVoiceCount: number = 0;
 
   // Beat callback
   private beatCallback: BeatCallback | null = null;
@@ -187,6 +190,7 @@ export class MetronomeEngine {
     this.clickPlaybackPos = -1;
     this.activeVoiceSample = null;
     this.voicePlaybackPos = -1;
+    this.pendingVoiceCount = 0;
     this.lastBpm = 0;
     this.lastMeterDenominator = 0;
     this.lastMeterNumerator = 0;
@@ -251,10 +255,12 @@ export class MetronomeEngine {
     this.vtCount = 0;
 
     if (this.voiceSampleBank === null || !this.voiceSampleBank.isReady()) {
+      this.pendingVoiceCount = 0;
       return;
     }
 
     const offsetFrames = Math.round(this.params.voiceOffsetMs / 1000.0 * this.sampleRate);
+    this.collectPendingVoiceTriggers(numFrames);
 
     // For negative offset: voice starts BEFORE beat → lookahead to find
     // beats slightly ahead of this buffer window
@@ -286,21 +292,86 @@ export class MetronomeEngine {
           const localFrame = voiceStartGlobal - this.totalFramesRendered;
 
           if (localFrame >= 0 && localFrame < numFrames) {
-            const idx = this.vtCount;
-            if (idx < this.vtFrames.length) {
-              this.vtFrames[idx] = localFrame;
-              this.vtSamples[idx] = voiceSample;
-            } else {
-              this.vtFrames.push(localFrame);
-              this.vtSamples.push(voiceSample);
-            }
-            this.vtCount++;
+            this.addImmediateVoiceTrigger(localFrame, voiceSample);
+          } else if (offsetFrames > 0 && localFrame >= numFrames) {
+            // Positive offsets can land in the next buffer, so queue them instead of dropping them.
+            this.queuePendingVoiceTrigger(voiceStartGlobal, voiceSample);
           }
         }
       }
 
       beatFrame += this.framesPerBeat;
       beatInMeasure = (beatInMeasure + 1) % this.params.meterNumerator;
+    }
+
+    this.sortVoiceTriggers();
+  }
+
+  private collectPendingVoiceTriggers(numFrames: number): void {
+    if (this.pendingVoiceCount === 0) {
+      return;
+    }
+
+    let writeIdx = 0;
+    const bufferEnd = this.totalFramesRendered + numFrames;
+    for (let i = 0; i < this.pendingVoiceCount; i++) {
+      const globalFrame = this.pendingVoiceFrames[i];
+      const sample = this.pendingVoiceSamples[i];
+
+      if (sample === null) {
+        continue;
+      }
+
+      if (globalFrame < bufferEnd) {
+        const localFrame = Math.max(0, globalFrame - this.totalFramesRendered);
+        this.addImmediateVoiceTrigger(localFrame, sample);
+        continue;
+      }
+
+      this.pendingVoiceFrames[writeIdx] = globalFrame;
+      this.pendingVoiceSamples[writeIdx] = sample;
+      writeIdx++;
+    }
+
+    this.pendingVoiceCount = writeIdx;
+  }
+
+  private addImmediateVoiceTrigger(localFrame: number, voiceSample: Float32Array): void {
+    const idx = this.vtCount;
+    if (idx < this.vtFrames.length) {
+      this.vtFrames[idx] = localFrame;
+      this.vtSamples[idx] = voiceSample;
+    } else {
+      this.vtFrames.push(localFrame);
+      this.vtSamples.push(voiceSample);
+    }
+    this.vtCount++;
+  }
+
+  private queuePendingVoiceTrigger(globalFrame: number, voiceSample: Float32Array): void {
+    const idx = this.pendingVoiceCount;
+    if (idx < this.pendingVoiceFrames.length) {
+      this.pendingVoiceFrames[idx] = globalFrame;
+      this.pendingVoiceSamples[idx] = voiceSample;
+    } else {
+      this.pendingVoiceFrames.push(globalFrame);
+      this.pendingVoiceSamples.push(voiceSample);
+    }
+    this.pendingVoiceCount++;
+  }
+
+  private sortVoiceTriggers(): void {
+    for (let i = 1; i < this.vtCount; i++) {
+      const frame = this.vtFrames[i];
+      const sample = this.vtSamples[i];
+      let j = i - 1;
+      while (j >= 0 && this.vtFrames[j] > frame) {
+        this.vtFrames[j + 1] = this.vtFrames[j];
+        this.vtSamples[j + 1] = this.vtSamples[j];
+        j--;
+      }
+      this.vtFrames[j + 1] = frame;
+      this.vtSamples[j + 1] = sample;
     }
   }
 

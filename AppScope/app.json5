@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "com.example.harmonymetronome",
+    "bundleName": "com.wenjianjian.metrome",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

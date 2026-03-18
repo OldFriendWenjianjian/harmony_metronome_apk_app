@@ -7,7 +7,7 @@
 	},
 	"BuildOptions":{
 		"SELECT_BUILD_PRODUCT":"default",
-		"BUNDLE_NAME":"com.example.harmonymetronome",
+		"BUNDLE_NAME":"com.wenjianjian.metrome",
 		"BUILD_PATH":{
 			"OUTPUT_PATH":"C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\build\\outputs\\default"
 		},

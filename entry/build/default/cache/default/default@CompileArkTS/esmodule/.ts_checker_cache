@@ -60,6 +60,42 @@
       ],
       "error": false
     },
+    "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts": {
+      "mtimeMs": 1768795642000,
+      "children": [
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIAbilityContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AbilityStageContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\ApplicationContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\BaseContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\Context.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\ExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\FormExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\FormEditExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\LiveFormExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\EventHub.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\dataAbilityHelper.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AbilityStartCallback.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\connectOptions.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\VpnExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\EmbeddableUIAbilityContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\PhotoEditorExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIServiceProxy.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIServiceExtensionConnectCallback.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AppServiceExtensionContext.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\abilityResult.d.ts"
+      ],
+      "parent": [
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\entryability\\EntryAbility.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.arkui.UIContext.d.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\pages\\Index.ets",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\data\\PreferencesManager.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\service\\BackgroundPlayService.ts"
+      ],
+      "error": false
+    },
     "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts": {
       "mtimeMs": 1768795642000,
       "children": [],
@@ -68,6 +104,7 @@
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\VoiceSampleBank.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\NativeMetronomeEngine.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\service\\BackgroundPlayService.ts"
       ],
       "error": false
@@ -98,11 +135,12 @@
       "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\entryability\\EntryAbility.ts": {
-      "mtimeMs": 1771783832315.34,
+      "mtimeMs": 1771865508679.5476,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.UIAbility.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.Want.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.AbilityConstant.d.ts",
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.window.d.ts"
       ],
@@ -226,7 +264,6 @@
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.data.rdb.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.multimodalInput.pointer.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.data.preferences.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.multimedia.audio.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.resourceschedule.backgroundTaskManager.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.wantAgent.d.ts",
@@ -712,40 +749,6 @@
       ],
       "error": false
     },
-    "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts": {
-      "mtimeMs": 1768795642000,
-      "children": [
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIAbilityContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AbilityStageContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\ApplicationContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\BaseContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\Context.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\ExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\FormExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\FormEditExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\LiveFormExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\EventHub.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\dataAbilityHelper.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AbilityStartCallback.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\connectOptions.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\VpnExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\EmbeddableUIAbilityContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\PhotoEditorExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIServiceProxy.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\UIServiceExtensionConnectCallback.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AppServiceExtensionContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\ability\\abilityResult.d.ts"
-      ],
-      "parent": [
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.arkui.UIContext.d.ts",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\pages\\Index.ets",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\service\\BackgroundPlayService.ts"
-      ],
-      "error": false
-    },
     "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.multimodalInput.pointer.d.ts": {
       "mtimeMs": 1768795642000,
       "children": [
@@ -1023,7 +1026,6 @@
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\ExtensionContext.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\AbilityStageContext.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader\\declarations\\common.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.print.d.ts"
       ],
@@ -1522,7 +1524,7 @@
       "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts": {
-      "mtimeMs": 1771807610614.252,
+      "mtimeMs": 1773629712170.0757,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts",
@@ -1534,58 +1536,47 @@
       "parent": [
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\pages\\Index.ets"
       ],
-      "error": true,
-      "errorCodes": [
-        2554
-      ]
+      "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\pages\\Index.ets": {
-      "mtimeMs": 1771808466758.2268,
+      "mtimeMs": 1773850297588.0735,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\data\\PreferencesManager.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts"
       ],
       "parent": [],
-      "error": true,
-      "errorCodes": [
-        28007
-      ]
+      "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\data\\PreferencesManager.ts": {
-      "mtimeMs": 1771783847294.564,
+      "mtimeMs": 1773848966047.0952,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.data.preferences.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts"
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts"
       ],
       "parent": [
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts"
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\pages\\Index.ets"
       ],
-      "error": true,
-      "errorCodes": [
-        2554
-      ]
+      "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts": {
-      "mtimeMs": 1771857178398.0618,
+      "mtimeMs": 1773663654116.8103,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.multimedia.audio.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.common.d.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\MetronomeEngine.ts",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\VoiceSampleBank.ts"
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\VoiceSampleBank.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\NativeMetronomeEngine.ts"
       ],
       "parent": [
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts"
       ],
-      "error": true,
-      "errorCodes": [
-        2554,
-        2551,
-        28040
-      ]
+      "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\service\\BackgroundPlayService.ts": {
-      "mtimeMs": 1771857178398.0618,
+      "mtimeMs": 1771868423684.2812,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.resourceschedule.backgroundTaskManager.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.app.ability.wantAgent.d.ts",
@@ -1598,18 +1589,18 @@
       ],
       "error": true,
       "errorCodes": [
-        2554,
         28007
       ]
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\MetronomeEngine.ts": {
-      "mtimeMs": 1771857242743.6514,
+      "mtimeMs": 1773630026902.0608,
       "children": [
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\VoiceSampleBank.ts"
       ],
       "parent": [
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\viewmodel\\MetronomeViewModel.ts",
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts"
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\NativeMetronomeEngine.ts"
       ],
       "error": false
     },
@@ -1624,35 +1615,6 @@
       ],
       "error": false
     },
-    "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts": {
-      "mtimeMs": 1768795642000,
-      "children": [
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.base.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\permissions.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\application\\Context.d.ts",
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\security\\PermissionRequestResult.d.ts"
-      ],
-      "parent": [
-        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\data\\PreferencesManager.ts"
-      ],
-      "error": false
-    },
-    "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\permissions.d.ts": {
-      "mtimeMs": 1768795642000,
-      "children": [],
-      "parent": [
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts"
-      ],
-      "error": false
-    },
-    "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\security\\PermissionRequestResult.d.ts": {
-      "mtimeMs": 1768795642000,
-      "children": [],
-      "parent": [
-        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts"
-      ],
-      "error": false
-    },
     "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.multimedia.audio.d.ts": {
       "mtimeMs": 1768795642000,
       "children": [
@@ -1664,7 +1626,7 @@
       "error": false
     },
     "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\VoiceSampleBank.ts": {
-      "mtimeMs": 1771857251853.1233,
+      "mtimeMs": 1773553678640.6506,
       "children": [
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.resourceManager.d.ts",
         "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts"
@@ -1673,9 +1635,20 @@
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts",
         "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\MetronomeEngine.ts"
       ],
+      "error": false
+    },
+    "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\NativeMetronomeEngine.ts": {
+      "mtimeMs": 1773663654116.8103,
+      "children": [
+        "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.hilog.d.ts",
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\MetronomeEngine.ts"
+      ],
+      "parent": [
+        "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\entry\\src\\main\\ets\\audio\\AudioOutputService.ts"
+      ],
       "error": true,
       "errorCodes": [
-        2554
+        28014
       ]
     },
     "C:\\Program Files\\Huawei\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.resourceschedule.backgroundTaskManager.d.ts": {

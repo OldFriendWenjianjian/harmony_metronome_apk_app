@@ -5,7 +5,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const TAG: string = '[BackgroundPlayService]';
 const DOMAIN: number = 0x0000;
 
-const BUNDLE_NAME: string = 'com.example.harmonymetronome';
+const BUNDLE_NAME: string = 'com.wenjianjian.metrome';
 const ABILITY_NAME: string = 'EntryAbility';
 
 /**

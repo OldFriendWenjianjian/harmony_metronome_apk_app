@@ -1,0 +1,3 @@
+C:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/.cxx/default/default/release/x86_64/CMakeFiles/metronome_native.dir
+C:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/.cxx/default/default/release/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/a1258/Desktop/harmony_metronome_apk_app/entry/.cxx/default/default/release/x86_64/CMakeFiles/rebuild_cache.dir

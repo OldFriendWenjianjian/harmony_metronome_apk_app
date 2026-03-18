@@ -27,7 +27,7 @@ export class MetronomeViewModel {
   meterNumerator: number = 4;
   meterDenominator: number = 4;
   accentBitmask: number = 0x1;
-  language: string = 'en';
+  language: string = 'zh';
   firstBeatOnly: boolean = true;
   voiceOffsetMs: number = 0;
   isPlaying: boolean = false;
@@ -187,38 +187,17 @@ export class MetronomeViewModel {
     this.setBpm(this.bpm + delta);
   }
 
-  setMeterNumerator(value: number): void {
-    const clamped = Math.max(1, Math.min(12, Math.round(value)));
-    if (clamped === this.meterNumerator) {
-      return;
-    }
-    this.meterNumerator = clamped;
-    this.accentBitmask = this.accentBitmask & ((1 << clamped) - 1);
-    if (this.accentBitmask === 0) {
-      this.accentBitmask = 0x1;
-    }
-    this.syncEngineParams();
-    this.persistSingle('meter_numerator', this.meterNumerator);
-    this.persistSingle('accent_bitmask', this.accentBitmask);
-    this.notifyStateChange();
-  }
-
-  setMeterDenominator(value: number): void {
-    if (!VALID_DENOMINATORS.includes(value) || value === this.meterDenominator) {
-      return;
-    }
-    this.meterDenominator = value;
-    this.syncEngineParams();
-    this.persistSingle('meter_denominator', this.meterDenominator);
-    this.notifyStateChange();
-  }
-
-  setMeterPreset(num: number, den: number): void {
-    const safeNum = Math.max(1, Math.min(12, num));
-    const safeDen = VALID_DENOMINATORS.includes(den) ? den : 4;
+  /**
+   * Mirrors the Android behavior:
+   * when the meter changes, reset accents to first beat only.
+   */
+  setMeter(numerator: number, denominator: number): void {
+    const safeNum = Math.max(1, Math.min(12, Math.round(numerator)));
+    const safeDen = VALID_DENOMINATORS.includes(denominator) ? denominator : 4;
     if (safeNum === this.meterNumerator && safeDen === this.meterDenominator) {
       return;
     }
+
     this.meterNumerator = safeNum;
     this.meterDenominator = safeDen;
     this.accentBitmask = 0x1;
@@ -227,6 +206,18 @@ export class MetronomeViewModel {
     this.persistSingle('meter_denominator', this.meterDenominator);
     this.persistSingle('accent_bitmask', this.accentBitmask);
     this.notifyStateChange();
+  }
+
+  setMeterNumerator(value: number): void {
+    this.setMeter(value, this.meterDenominator);
+  }
+
+  setMeterDenominator(value: number): void {
+    this.setMeter(this.meterNumerator, value);
+  }
+
+  setMeterPreset(num: number, den: number): void {
+    this.setMeter(num, den);
   }
 
   toggleAccent(beatIndex: number): void {
@@ -271,6 +262,13 @@ export class MetronomeViewModel {
     this.syncEngineParams();
     this.persistSingle('first_beat_only', this.firstBeatOnly);
     this.notifyStateChange();
+  }
+
+  /**
+   * Keeps the UI explicit instead of flipping the boolean inline.
+   */
+  setVoiceMode(mode: 'every' | 'first'): void {
+    this.setFirstBeatOnly(mode === 'first');
   }
 
   setVoiceOffsetMs(value: number): void {

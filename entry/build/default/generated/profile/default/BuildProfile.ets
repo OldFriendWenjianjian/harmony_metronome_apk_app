@@ -1,14 +1,14 @@
 /**
  * Use these variables when you tailor your ArkTS code. They must be of the const type.
  */
-export const BUNDLE_NAME = 'com.example.harmonymetronome';
+export const BUNDLE_NAME = 'com.wenjianjian.metrome';
 export const BUNDLE_TYPE = 'app';
 export const VERSION_CODE = 1000000;
 export const VERSION_NAME = '1.0.0';
 export const TARGET_NAME = 'default';
 export const PRODUCT_NAME = 'default';
-export const BUILD_MODE_NAME = 'release';
-export const DEBUG = false;
+export const BUILD_MODE_NAME = 'debug';
+export const DEBUG = true;
 
 /**
  * BuildProfile Class is used only for compatibility purposes.

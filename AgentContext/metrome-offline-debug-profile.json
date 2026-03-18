@@ -1,0 +1,34 @@
+{
+  "version-name": "2.0.0",
+  "version-code": 2,
+  "uuid": "2f5e3025-6ec1-4d98-bd01-6af3a4ea5f92",
+  "validity": {
+    "not-before": 1773547200,
+    "not-after": 2524521599
+  },
+  "type": "debug",
+  "bundle-info": {
+    "developer-id": "OpenHarmony",
+    "development-certificate": "-----BEGIN CERTIFICATE-----\nMIICRjCCAc2gAwIBAgIFAMgDbf4wCgYIKoZIzj0EAwIwYzELMAkGA1UEBhMCQ04x\nFDASBgNVBAoMC09wZW5IYXJtb255MRkwFwYDVQQLDBBPcGVuSGFybW9ueSBUZWFt\nMSMwIQYDVQQDDBpPcGVuSGFybW9ueSBBcHBsaWNhdGlvbiBDQTAeFw0yNjAzMTUw\nNDUyMDBaFw0zNjAzMTIwNDUyMDBaMGYxCzAJBgNVBAYTAkNOMRQwEgYDVQQKDAtP\ncGVuSGFybW9ueTEZMBcGA1UECwwQT3Blbkhhcm1vbnkgVGVhbTEmMCQGA1UEAwwd\nY29tLndlbmppYW5qaWFuLm1ldHJvbWUgRGVidWcwWTATBgcqhkjOPQIBBggqhkjO\nPQMBBwNCAATbYOCQQpW5fdkYHN45v0X3AHax12jPBdEDosFRIZ1eXmxOYzSGJwMf\nsHhUU90E8lI0TXYZnNmgM1sovubeQqATo2swaTAdBgNVHQ4EFgQU+3Gu6GVxEFCw\nl3Bxmou72g1RWBowCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAww\nCgYIKwYBBQUHAwMwGAYMKwYBBAGPWwKCeAEDBAgwBgIBAQoBADAKBggqhkjOPQQD\nAgNnADBkAjByRnLekoa8uAHoClc+ldeukwTzqSU0fikRWld7t2R4shg+2KaMbI8/\n8M9A/+nBJK0CMEOdidW3GTiPJgoyiF+9BQzFoEu4nwkEZmqapAQzfpwzKc3PzByg\n9W0bF1f71qsKWQ==\n-----END CERTIFICATE-----\n",
+    "bundle-name": "com.wenjianjian.metrome",
+    "apl": "normal",
+    "app-feature": "hos_normal_app"
+  },
+  "acls": {
+    "allowed-acls": [
+      ""
+    ]
+  },
+  "permissions": {
+    "restricted-permissions": [
+      ""
+    ]
+  },
+  "debug-info": {
+    "device-ids": [
+      "454D55057494E05838360B6E6DADD792B4667A2A12477CE90125D00000000000"
+    ],
+    "device-id-type": "udid"
+  },
+  "issuer": "pki_internal"
+}

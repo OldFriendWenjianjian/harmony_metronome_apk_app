@@ -1,31 +1,55 @@
 import { common } from '@kit.AbilityKit';
+import { PreferencesManager } from '../data/PreferencesManager';
 import { MetronomeViewModel } from '../viewmodel/MetronomeViewModel';
 
-const BG_COLOR: string = '#1A1A2E';
-const CARD_BG: string = '#16213E';
-const ACCENT: string = '#E94560';
-const TEXT_PRIMARY: string = '#FFFFFF';
-const TEXT_SECONDARY: string = '#8899AA';
-const PLAY_GREEN: string = '#4CAF50';
-const DOT_NORMAL: string = '#3A4A6A';
-const DOT_HIGHLIGHT: string = '#FFD700';
-const CHIP_SELECTED: string = '#0F3460';
-const CHIP_UNSELECTED: string = '#2A3A5A';
+// 使用满足最小对比度要求的配色，避免浅色文字或图标叠在浅底色上。
+const PAGE_BG: string = '#F4F6FB';
+const SURFACE_BG: string = '#FFFFFF';
+const SURFACE_SUBTLE: string = '#EEF2FF';
+const PRIMARY: string = '#1D4ED8';
+const PRIMARY_SOFT: string = '#BFD1FF';
+const SUCCESS: string = '#0F766E';
+const TEXT_PRIMARY: string = '#172033';
+const TEXT_SECONDARY: string = '#4F596A';
+const TEXT_MUTED: string = '#5F6B7A';
+const BORDER_COLOR: string = '#C7D1E3';
+const CHIP_BG: string = '#F0F3FA';
+const CHIP_ACTIVE_BG: string = '#E0EAFF';
+const ACCENT_ACTIVE: string = '#1D4ED8';
+const ACCENT_INACTIVE: string = '#EDF2FB';
+const CURRENT_BEAT_BG: string = '#0F766E';
+const STATUS_ACTIVE_BG: string = '#DFF6EE';
+const STATUS_IDLE_BG: string = '#E8EDF5';
+const STOP_BUTTON_BG: string = '#DC2626';
+const OVERLAY_BG: string = '#B30F172A';
+const POLICY_TAG_BG: string = '#DBEAFE';
+const POLICY_TAG_TEXT: string = '#1E3A8A';
+const PRIVACY_POLICY_URL: string =
+  'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1909046125562706240';
 
 @Entry
 @Component
 struct Index {
   private vm: MetronomeViewModel = new MetronomeViewModel();
+  private privacyPrefs: PreferencesManager = new PreferencesManager();
+  private uiContext: common.UIAbilityContext | null = null;
+  private privacyStatusLoaded: boolean = false;
 
   @State bpm: number = 120;
   @State meterNumerator: number = 4;
   @State meterDenominator: number = 4;
   @State accentBitmask: number = 0x1;
-  @State lang: string = 'en';
+  @State lang: string = 'zh';
   @State firstBeatOnly: boolean = true;
   @State voiceOffsetMs: number = 0;
   @State playing: boolean = false;
   @State curBeat: number = -1;
+  @State privacyAccepted: boolean = false;
+  @State privacyLoading: boolean = true;
+  @State privacySubmitting: boolean = false;
+  @State privacyLinkOpening: boolean = false;
+  @State privacyMessage: string = '';
+  @State viewModelInitialized: boolean = false;
 
   aboutToAppear(): void {
     this.vm.setOnStateChange((): void => {
@@ -34,12 +58,107 @@ struct Index {
     this.syncState();
     const ctx = AppStorage.get<common.UIAbilityContext>('uiAbilityContext');
     if (ctx !== undefined) {
-      this.vm.init(ctx).catch((_: Object): void => {});
+      this.uiContext = ctx;
+      if (this.privacyStatusLoaded) {
+        if (this.privacyAccepted && !this.viewModelInitialized) {
+          this.ensureViewModelReady().catch((_: Object): void => {});
+        }
+      } else {
+        this.bootstrapPrivacyGate(ctx).catch((_: Object): void => {});
+      }
+    } else {
+      this.privacyLoading = false;
+      this.privacyMessage = '应用上下文尚未就绪，请重新启动后重试。';
     }
   }
 
   aboutToDisappear(): void {
-    this.vm.destroy().catch((_: Object): void => {});
+    if (this.viewModelInitialized) {
+      this.vm.destroy().catch((_: Object): void => {});
+      this.viewModelInitialized = false;
+    }
+  }
+
+  // 首次启动前先读取隐私同意状态，未同意时不初始化音频与后台能力。
+  private async bootstrapPrivacyGate(context: common.UIAbilityContext): Promise<void> {
+    this.privacyLoading = true;
+    this.privacyMessage = '';
+    try {
+      await this.privacyPrefs.init(context);
+      this.privacyAccepted = await this.privacyPrefs.hasAcceptedPrivacyPolicy();
+      this.privacyStatusLoaded = true;
+      if (this.privacyAccepted) {
+        await this.ensureViewModelReady();
+      }
+    } catch (e) {
+      if (this.privacyAccepted) {
+        this.privacyMessage = `主界面初始化失败：${this.errorMessageOf(e)}`;
+      } else {
+        this.privacyMessage = `隐私状态读取失败：${this.errorMessageOf(e)}`;
+      }
+    } finally {
+      this.privacyLoading = false;
+    }
+  }
+
+  // 同意后再初始化业务 ViewModel，确保用户授权前应用不会进入可用态。
+  private async ensureViewModelReady(): Promise<void> {
+    if (this.viewModelInitialized || this.uiContext === null) {
+      return;
+    }
+    await this.vm.init(this.uiContext);
+    this.viewModelInitialized = true;
+    this.privacyMessage = '';
+    this.syncState();
+  }
+
+  private async openPrivacyPolicy(): Promise<void> {
+    if (this.uiContext === null || this.privacyLinkOpening) {
+      return;
+    }
+    this.privacyLinkOpening = true;
+    this.privacyMessage = '';
+    try {
+      await this.uiContext.openLink(PRIVACY_POLICY_URL);
+    } catch (_) {
+      this.privacyMessage = `无法自动打开完整政策，请手动访问：${PRIVACY_POLICY_URL}`;
+    } finally {
+      this.privacyLinkOpening = false;
+    }
+  }
+
+  private async acceptPrivacyPolicy(): Promise<void> {
+    if (this.uiContext === null || this.privacySubmitting) {
+      return;
+    }
+    this.privacySubmitting = true;
+    this.privacyMessage = '';
+    try {
+      await this.privacyPrefs.init(this.uiContext);
+      await this.privacyPrefs.setPrivacyPolicyAccepted(true);
+      this.privacyAccepted = true;
+      this.privacyStatusLoaded = true;
+      await this.ensureViewModelReady();
+    } catch (e) {
+      this.privacyAccepted = false;
+      this.privacyMessage = `保存隐私同意状态失败：${this.errorMessageOf(e)}`;
+    } finally {
+      this.privacySubmitting = false;
+    }
+  }
+
+  private async declinePrivacyPolicy(): Promise<void> {
+    if (this.uiContext === null || this.privacySubmitting) {
+      return;
+    }
+    this.privacySubmitting = true;
+    this.privacyMessage = '';
+    try {
+      await this.uiContext.terminateSelf();
+    } catch (_) {
+      this.privacySubmitting = false;
+      this.privacyMessage = '无法自动退出应用，请手动关闭后再决定是否同意。';
+    }
   }
 
   private syncState(): void {
@@ -54,76 +173,318 @@ struct Index {
     this.curBeat = this.vm.currentBeatIndex;
   }
 
+  private errorMessageOf(error: Object): string {
+    if (error instanceof Error && error.message.length > 0) {
+      return error.message;
+    }
+    return String(error);
+  }
+
   private beatArray(): number[] {
     const arr: number[] = [];
-    for (let i: number = 0; i < this.meterNumerator; i++) {
+    for (let i = 0; i < this.meterNumerator; i++) {
       arr.push(i);
     }
     return arr;
   }
 
-  build() {
-    Column() {
-      Scroll() {
-        Column({ space: 16 }) {
-          Text('Harmony Metronome')
-            .fontSize(22)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(TEXT_PRIMARY)
+  private isBeatAccented(idx: number): boolean {
+    return ((this.accentBitmask >>> idx) & 1) === 1;
+  }
 
-          this.BpmSection()
-          this.PlaySection()
-          this.MeterSection()
-          this.AccentSection()
-          this.VoiceSection()
+  private beatIndexColor(idx: number): string {
+    if (this.curBeat === idx) {
+      return CURRENT_BEAT_BG;
+    }
+    return this.isBeatAccented(idx) ? ACCENT_ACTIVE : TEXT_SECONDARY;
+  }
+
+  private beatBubbleColor(idx: number): string {
+    if (this.curBeat === idx) {
+      return CURRENT_BEAT_BG;
+    }
+    return this.isBeatAccented(idx) ? ACCENT_ACTIVE : ACCENT_INACTIVE;
+  }
+
+  private beatBubbleTextColor(idx: number): string {
+    if (this.curBeat === idx || this.isBeatAccented(idx)) {
+      return '#FFFFFF';
+    }
+    return TEXT_PRIMARY;
+  }
+
+  build() {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.privacyAccepted && this.viewModelInitialized) {
+        Column() {
+          this.HeaderSection()
+          Scroll() {
+            Column({ space: 16 }) {
+              this.TransportCard()
+              this.MeterCard()
+              this.AccentCard()
+              this.VoiceCard()
+            }
+            .width('100%')
+            .padding({ left: 16, right: 16, top: 8, bottom: 28 })
+          }
+          .scrollable(ScrollDirection.Vertical)
+          .edgeEffect(EdgeEffect.Spring)
+          .layoutWeight(1)
+          .width('100%')
         }
         .width('100%')
-        .padding({ left: 16, right: 16, top: 24, bottom: 40 })
+        .height('100%')
+        .backgroundColor(PAGE_BG)
+      } else {
+        this.LockedShell()
       }
-      .scrollable(ScrollDirection.Vertical)
-      .edgeEffect(EdgeEffect.Spring)
-      .width('100%')
-      .layoutWeight(1)
+
+      if (!this.privacyAccepted) {
+        this.PrivacyPolicyOverlay()
+      } else if (!this.viewModelInitialized) {
+        this.InitializingOverlay()
+      }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(BG_COLOR)
+    .backgroundColor(PAGE_BG)
   }
 
-  // ── BPM display, adjustment buttons, and slider ──────────────────────
+  @Builder
+  LockedShell() {
+    Column({ space: 14 }) {
+      Text('节拍器')
+        .fontSize(30)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(TEXT_PRIMARY)
+
+      Text('首次启动前需要完成隐私政策确认。')
+        .fontSize(15)
+        .fontColor(TEXT_SECONDARY)
+
+      if (this.privacyAccepted && !this.viewModelInitialized) {
+        LoadingProgress()
+          .width(36)
+          .height(36)
+          .margin({ top: 12 })
+
+        Text('正在初始化节拍器...')
+          .fontSize(13)
+          .fontColor(TEXT_MUTED)
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .padding(24)
+    .backgroundColor(PAGE_BG)
+  }
 
   @Builder
-  BpmSection() {
+  InitializingOverlay() {
+    Column({ space: 14 }) {
+      LoadingProgress()
+        .width(42)
+        .height(42)
+
+      Text('正在完成授权后的初始化，请稍候。')
+        .fontSize(14)
+        .fontColor(TEXT_PRIMARY)
+    }
+    .padding({ left: 28, right: 28, top: 24, bottom: 24 })
+    .backgroundColor('#F8FAFC')
+    .borderRadius(24)
+  }
+
+  @Builder
+  PrivacyPolicyOverlay() {
     Column() {
+      Column({ space: 16 }) {
+        Text('用户隐私政策')
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(TEXT_PRIMARY)
+          .width('100%')
+
+        Text('为保障你的个人信息与使用权益，首次启动需要先阅读并同意隐私政策；未同意前，应用不会进入可使用状态。')
+          .fontSize(14)
+          .lineHeight(22)
+          .fontColor(TEXT_SECONDARY)
+          .width('100%')
+
+        Text('首次启动必读')
+          .fontSize(12)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(POLICY_TAG_TEXT)
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .backgroundColor(POLICY_TAG_BG)
+          .borderRadius(14)
+
+        if (this.privacyLoading) {
+          Column({ space: 12 }) {
+            LoadingProgress()
+              .width(34)
+              .height(34)
+
+            Text('正在检查隐私授权状态...')
+              .fontSize(14)
+              .fontColor(TEXT_SECONDARY)
+          }
+          .width('100%')
+          .padding({ top: 12, bottom: 12 })
+        } else {
+          Scroll() {
+            Column({ space: 12 }) {
+              this.PolicyBullet('应用会在本地保存节拍器参数，例如 BPM、拍号、重音和语音设置。')
+              this.PolicyBullet('音频播放与后台运行能力仅用于维持节拍器播放，不会在未同意前初始化。')
+              this.PolicyBullet('完整政策以华为云托管页面为准，点击下方按钮可查看原文。')
+            }
+            .width('100%')
+          }
+          .width('100%')
+          .height(144)
+
+          Button(this.privacyLinkOpening ? '正在打开完整政策...' : '查看完整隐私政策')
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(PRIMARY)
+            .backgroundColor('#EFF6FF')
+            .border({
+              width: 1,
+              color: PRIMARY_SOFT
+            })
+            .borderRadius(16)
+            .width('100%')
+            .height(48)
+            .onClick((): void => {
+              this.openPrivacyPolicy().catch((_: Object): void => {});
+            })
+
+          if (this.privacyMessage.length > 0) {
+            Text(this.privacyMessage)
+              .fontSize(12)
+              .lineHeight(18)
+              .fontColor(STOP_BUTTON_BG)
+              .width('100%')
+          }
+
+          Row({ space: 12 }) {
+            Button(this.privacySubmitting ? '处理中...' : '不同意并退出')
+              .fontSize(15)
+              .fontColor(TEXT_PRIMARY)
+              .backgroundColor('#E5E7EB')
+              .borderRadius(16)
+              .width('48%')
+              .height(52)
+              .onClick((): void => {
+                this.declinePrivacyPolicy().catch((_: Object): void => {});
+              })
+
+            Button(this.privacySubmitting ? '处理中...' : '同意并继续')
+              .fontSize(15)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#FFFFFF')
+              .backgroundColor(PRIMARY)
+              .borderRadius(16)
+              .width('48%')
+              .height(52)
+              .onClick((): void => {
+                this.acceptPrivacyPolicy().catch((_: Object): void => {});
+              })
+          }
+          .width('100%')
+        }
+      }
+      .width('100%')
+      .padding(22)
+      .backgroundColor(SURFACE_BG)
+      .borderRadius(28)
+    }
+    .width('100%')
+    .height('100%')
+    .padding(18)
+    .backgroundColor(OVERLAY_BG)
+    .justifyContent(FlexAlign.Center)
+  }
+
+  @Builder
+  PolicyBullet(content: string) {
+    Row() {
+      Text('•')
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(PRIMARY)
+        .margin({ top: 2, right: 8 })
+
+      Text(content)
+        .fontSize(13)
+        .lineHeight(20)
+        .fontColor(TEXT_PRIMARY)
+        .layoutWeight(1)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Top)
+  }
+
+  @Builder
+  HeaderSection() {
+    Column() {
+      Row() {
+        Column() {
+          Text('节拍器')
+            .fontSize(28)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(TEXT_PRIMARY)
+
+          Text('低延迟逐拍语音节拍器')
+            .fontSize(13)
+            .fontColor(TEXT_SECONDARY)
+            .margin({ top: 4 })
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+
+        Text(this.playing ? '播放中' : '已停止')
+          .fontSize(12)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.playing ? SUCCESS : TEXT_SECONDARY)
+          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+          .backgroundColor(this.playing ? STATUS_ACTIVE_BG : STATUS_IDLE_BG)
+          .borderRadius(16)
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 22, bottom: 8 })
+  }
+
+  @Builder
+  TransportCard() {
+    Column({ space: 16 }) {
+      this.CardTitle('速度', 'BPM 微调与播放控制')
+
+      Text(this.bpm.toString())
+        .fontSize(60)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(PRIMARY)
+        .width('100%')
+        .textAlign(TextAlign.Center)
+
       Text('BPM')
         .fontSize(14)
         .fontColor(TEXT_SECONDARY)
+        .width('100%')
+        .textAlign(TextAlign.Center)
 
-      Text(this.bpm.toString())
-        .fontSize(64)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(TEXT_PRIMARY)
-        .margin({ top: 2, bottom: 12 })
-
-      Row({ space: 12 }) {
-        Button('-5')
-          .fontSize(16).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-          .borderRadius(8).width(56).height(36)
-          .onClick((): void => { this.vm.adjustBpm(-5); this.syncState(); })
-        Button('-1')
-          .fontSize(16).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-          .borderRadius(8).width(56).height(36)
-          .onClick((): void => { this.vm.adjustBpm(-1); this.syncState(); })
-        Button('+1')
-          .fontSize(16).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-          .borderRadius(8).width(56).height(36)
-          .onClick((): void => { this.vm.adjustBpm(1); this.syncState(); })
-        Button('+5')
-          .fontSize(16).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-          .borderRadius(8).width(56).height(36)
-          .onClick((): void => { this.vm.adjustBpm(5); this.syncState(); })
+      Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
+        this.ActionButton('-5', (): void => { this.vm.adjustBpm(-5); });
+        this.ActionButton('-1', (): void => { this.vm.adjustBpm(-1); });
+        this.ActionButton('+1', (): void => { this.vm.adjustBpm(1); });
+        this.ActionButton('+5', (): void => { this.vm.adjustBpm(5); });
       }
-      .margin({ bottom: 16 })
+      .width('100%')
 
       Slider({
         value: this.bpm,
@@ -132,219 +493,121 @@ struct Index {
         step: 1,
         style: SliderStyle.OutSet
       })
-        .trackColor(DOT_NORMAL)
-        .selectedColor(ACCENT)
-        .blockColor(TEXT_PRIMARY)
+        .trackColor('#D9E0F1')
+        .selectedColor(PRIMARY)
+        .blockColor('#FFFFFF')
         .onChange((value: number): void => {
           this.vm.setBpm(value);
-          this.syncState();
         })
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor(CARD_BG)
-    .borderRadius(16)
-    .alignItems(HorizontalAlign.Center)
-  }
 
-  // ── Play / Stop circular button ──────────────────────────────────────
-
-  @Builder
-  PlaySection() {
-    Column() {
-      Button() {
-        Text(this.playing ? '\u25A0' : '\u25B6')
-          .fontSize(40)
-          .fontColor(TEXT_PRIMARY)
+      Row() {
+        Text('30')
+          .fontSize(12)
+          .fontColor(TEXT_MUTED)
+        Blank()
+        Text('300')
+          .fontSize(12)
+          .fontColor(TEXT_MUTED)
       }
-      .width(100)
-      .height(100)
-      .borderRadius(50)
-      .backgroundColor(this.playing ? ACCENT : PLAY_GREEN)
-      .shadow({ radius: 16, color: this.playing ? ACCENT : PLAY_GREEN, offsetX: 0, offsetY: 0 })
+      .width('100%')
+
+      Button() {
+        Text(this.playing ? '停止' : '开始')
+          .fontSize(20)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFFFFF')
+      }
+      .width('100%')
+      .height(56)
+      .borderRadius(18)
+      .backgroundColor(this.playing ? STOP_BUTTON_BG : PRIMARY)
       .onClick((): void => {
         this.vm.togglePlay().catch((_: Object): void => {});
       })
-
-      Text(this.playing ? 'STOP' : 'PLAY')
-        .fontSize(12)
-        .fontColor(TEXT_SECONDARY)
-        .margin({ top: 8 })
     }
     .width('100%')
-    .alignItems(HorizontalAlign.Center)
+    .padding(18)
+    .backgroundColor(SURFACE_BG)
+    .borderRadius(24)
   }
 
-  // ── Time signature presets and custom controls ───────────────────────
-
   @Builder
-  MeterSection() {
-    Column() {
-      Text('Time Signature')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(TEXT_PRIMARY)
-        .margin({ bottom: 12 })
+  MeterCard() {
+    Column({ space: 16 }) {
+      this.CardTitle('拍号', '常用拍号与自定义拍值')
 
-      Row({ space: 8 }) {
-        Button('2/4')
-          .fontSize(14).fontColor(TEXT_PRIMARY).borderRadius(16).height(32)
-          .padding({ left: 16, right: 16 })
-          .backgroundColor(this.meterNumerator === 2 && this.meterDenominator === 4
-            ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({
-            width: this.meterNumerator === 2 && this.meterDenominator === 4 ? 1 : 0,
-            color: ACCENT
-          })
-          .onClick((): void => { this.vm.setMeterPreset(2, 4); this.syncState(); })
-        Button('3/4')
-          .fontSize(14).fontColor(TEXT_PRIMARY).borderRadius(16).height(32)
-          .padding({ left: 16, right: 16 })
-          .backgroundColor(this.meterNumerator === 3 && this.meterDenominator === 4
-            ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({
-            width: this.meterNumerator === 3 && this.meterDenominator === 4 ? 1 : 0,
-            color: ACCENT
-          })
-          .onClick((): void => { this.vm.setMeterPreset(3, 4); this.syncState(); })
-        Button('4/4')
-          .fontSize(14).fontColor(TEXT_PRIMARY).borderRadius(16).height(32)
-          .padding({ left: 16, right: 16 })
-          .backgroundColor(this.meterNumerator === 4 && this.meterDenominator === 4
-            ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({
-            width: this.meterNumerator === 4 && this.meterDenominator === 4 ? 1 : 0,
-            color: ACCENT
-          })
-          .onClick((): void => { this.vm.setMeterPreset(4, 4); this.syncState(); })
-        Button('6/8')
-          .fontSize(14).fontColor(TEXT_PRIMARY).borderRadius(16).height(32)
-          .padding({ left: 16, right: 16 })
-          .backgroundColor(this.meterNumerator === 6 && this.meterDenominator === 8
-            ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({
-            width: this.meterNumerator === 6 && this.meterDenominator === 8 ? 1 : 0,
-            color: ACCENT
-          })
-          .onClick((): void => { this.vm.setMeterPreset(6, 8); this.syncState(); })
-      }
-      .justifyContent(FlexAlign.Center)
-      .margin({ bottom: 16 })
-
-      Row() {
-        Column() {
-          Text('Beats')
-            .fontSize(12)
-            .fontColor(TEXT_SECONDARY)
-            .margin({ bottom: 6 })
-
-          Row({ space: 8 }) {
-            Button('-')
-              .fontSize(18).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-              .width(36).height(36).borderRadius(18)
-              .onClick((): void => {
-                this.vm.setMeterNumerator(this.meterNumerator - 1);
-                this.syncState();
-              })
-            Text(this.meterNumerator.toString())
-              .fontSize(24).fontWeight(FontWeight.Bold).fontColor(TEXT_PRIMARY)
-              .width(40).textAlign(TextAlign.Center)
-            Button('+')
-              .fontSize(18).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-              .width(36).height(36).borderRadius(18)
-              .onClick((): void => {
-                this.vm.setMeterNumerator(this.meterNumerator + 1);
-                this.syncState();
-              })
-          }
-          .alignItems(VerticalAlign.Center)
-        }
-        .alignItems(HorizontalAlign.Center)
-
-        Text('/')
-          .fontSize(32)
-          .fontColor(TEXT_SECONDARY)
-          .margin({ left: 20, right: 20 })
-
-        Column() {
-          Text('Note')
-            .fontSize(12)
-            .fontColor(TEXT_SECONDARY)
-            .margin({ bottom: 6 })
-
-          Row({ space: 8 }) {
-            Button('-')
-              .fontSize(18).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-              .width(36).height(36).borderRadius(18)
-              .onClick((): void => { this.vm.prevDenominator(); this.syncState(); })
-            Text(this.meterDenominator.toString())
-              .fontSize(24).fontWeight(FontWeight.Bold).fontColor(TEXT_PRIMARY)
-              .width(40).textAlign(TextAlign.Center)
-            Button('+')
-              .fontSize(18).fontColor(TEXT_PRIMARY).backgroundColor(CHIP_UNSELECTED)
-              .width(36).height(36).borderRadius(18)
-              .onClick((): void => { this.vm.nextDenominator(); this.syncState(); })
-          }
-          .alignItems(VerticalAlign.Center)
-        }
-        .alignItems(HorizontalAlign.Center)
+      Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
+        this.SelectChip('2/4', this.meterNumerator === 2 && this.meterDenominator === 4,
+          (): void => { this.vm.setMeterPreset(2, 4); });
+        this.SelectChip('3/4', this.meterNumerator === 3 && this.meterDenominator === 4,
+          (): void => { this.vm.setMeterPreset(3, 4); });
+        this.SelectChip('4/4', this.meterNumerator === 4 && this.meterDenominator === 4,
+          (): void => { this.vm.setMeterPreset(4, 4); });
+        this.SelectChip('6/8', this.meterNumerator === 6 && this.meterDenominator === 8,
+          (): void => { this.vm.setMeterPreset(6, 8); });
       }
       .width('100%')
-      .justifyContent(FlexAlign.Center)
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor(CARD_BG)
-    .borderRadius(16)
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  // ── Clickable accent dots per beat ───────────────────────────────────
-
-  @Builder
-  AccentSection() {
-    Column() {
-      Text('Accent Pattern')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(TEXT_PRIMARY)
-        .margin({ bottom: 12 })
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
+        this.StepperPanel('拍数', this.meterNumerator.toString(),
+          (): void => { this.vm.setMeter(this.meterNumerator - 1, this.meterDenominator); },
+          (): void => { this.vm.setMeter(this.meterNumerator + 1, this.meterDenominator); })
+
+        Text('/')
+          .fontSize(28)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(TEXT_MUTED)
+          .margin({ left: 12, right: 12 })
+
+        this.StepperPanel('音符', this.meterDenominator.toString(),
+          (): void => { this.vm.prevDenominator(); },
+          (): void => { this.vm.nextDenominator(); })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding(18)
+    .backgroundColor(SURFACE_BG)
+    .borderRadius(24)
+  }
+
+  @Builder
+  AccentCard() {
+    Column({ space: 14 }) {
+      this.CardTitle('重音模式', '点按拍点切换重音，当前拍会保持高亮')
+
+      Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
         ForEach(
           this.beatArray(),
           (idx: number) => {
             Column() {
               Text((idx + 1).toString())
                 .fontSize(12)
-                .fontColor(
-                  this.curBeat === idx ? DOT_HIGHLIGHT
-                    : ((this.accentBitmask >>> idx) & 1) === 1 ? ACCENT
-                    : TEXT_SECONDARY
-                )
-                .margin({ bottom: 4 })
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.beatIndexColor(idx))
+                .margin({ bottom: 6 })
 
-              Column()
-                .width(((this.accentBitmask >>> idx) & 1) === 1 ? 40 : 30)
-                .height(((this.accentBitmask >>> idx) & 1) === 1 ? 40 : 30)
-                .borderRadius(((this.accentBitmask >>> idx) & 1) === 1 ? 20 : 15)
-                .backgroundColor(
-                  this.curBeat === idx ? DOT_HIGHLIGHT
-                    : ((this.accentBitmask >>> idx) & 1) === 1 ? ACCENT
-                    : DOT_NORMAL
-                )
-                .shadow({
-                  radius: this.curBeat === idx ? 12 : 0,
-                  color: DOT_HIGHLIGHT,
-                  offsetX: 0,
-                  offsetY: 0
-                })
+              Stack({ alignContent: Alignment.Center }) {
+                Column()
+                  .width(46)
+                  .height(46)
+                  .borderRadius(23)
+                  .backgroundColor(this.beatBubbleColor(idx))
+                  .border({
+                    width: this.curBeat === idx ? 0 : 1,
+                    color: this.isBeatAccented(idx) ? PRIMARY_SOFT : BORDER_COLOR
+                  })
+
+                Text(this.isBeatAccented(idx) ? '强' : '弱')
+                  .fontSize(14)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(this.beatBubbleTextColor(idx))
+              }
             }
             .alignItems(HorizontalAlign.Center)
-            .margin(6)
+            .margin({ right: 10, bottom: 12 })
             .onClick((): void => {
               this.vm.toggleAccent(idx);
-              this.syncState();
             })
           },
           (idx: number): string => `${idx}_${this.accentBitmask}_${this.curBeat}`
@@ -353,98 +616,195 @@ struct Index {
       .width('100%')
     }
     .width('100%')
-    .padding(16)
-    .backgroundColor(CARD_BG)
-    .borderRadius(16)
+    .padding(18)
+    .backgroundColor(SURFACE_BG)
+    .borderRadius(24)
   }
 
-  // ── Language selection, first-beat toggle, voice offset ──────────────
-
   @Builder
-  VoiceSection() {
-    Column() {
-      Text('Voice Count')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(TEXT_PRIMARY)
-        .margin({ bottom: 12 })
+  VoiceCard() {
+    Column({ space: 16 }) {
+      this.CardTitle('语音设置', '语言、播报模式与时间偏移')
 
-      Row({ space: 12 }) {
-        Button('EN')
-          .fontSize(16).fontColor(TEXT_PRIMARY).borderRadius(16).width(64).height(36)
-          .backgroundColor(this.lang === 'en' ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({ width: this.lang === 'en' ? 1 : 0, color: ACCENT })
-          .onClick((): void => { this.vm.setLanguage('en'); this.syncState(); })
-        Button('\u4E2D')
-          .fontSize(16).fontColor(TEXT_PRIMARY).borderRadius(16).width(64).height(36)
-          .backgroundColor(this.lang === 'zh' ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({ width: this.lang === 'zh' ? 1 : 0, color: ACCENT })
-          .onClick((): void => { this.vm.setLanguage('zh'); this.syncState(); })
-        Button('\u65E5')
-          .fontSize(16).fontColor(TEXT_PRIMARY).borderRadius(16).width(64).height(36)
-          .backgroundColor(this.lang === 'ja' ? CHIP_SELECTED : CHIP_UNSELECTED)
-          .border({ width: this.lang === 'ja' ? 1 : 0, color: ACCENT })
-          .onClick((): void => { this.vm.setLanguage('ja'); this.syncState(); })
-      }
-      .justifyContent(FlexAlign.Center)
-      .margin({ bottom: 16 })
-
-      Row() {
-        Text('First beat only')
+      Column({ space: 10 }) {
+        Text('语言')
           .fontSize(14)
+          .fontWeight(FontWeight.Medium)
           .fontColor(TEXT_PRIMARY)
-        Blank()
-        Toggle({ type: ToggleType.Switch, isOn: this.firstBeatOnly })
-          .selectedColor(ACCENT)
-          .onChange((isOn: boolean): void => {
-            this.vm.setFirstBeatOnly(isOn);
-            this.syncState();
-          })
+
+        Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
+          this.SelectChip('中文', this.lang === 'zh', (): void => { this.vm.setLanguage('zh'); });
+          this.SelectChip('英语', this.lang === 'en', (): void => { this.vm.setLanguage('en'); });
+          this.SelectChip('日语', this.lang === 'ja', (): void => { this.vm.setLanguage('ja'); });
+        }
+        .width('100%')
       }
       .width('100%')
-      .padding({ left: 4, right: 4 })
-      .margin({ bottom: 16 })
 
-      Row() {
-        Text('Voice Offset')
+      Column({ space: 10 }) {
+        Text('播报模式')
           .fontSize(14)
+          .fontWeight(FontWeight.Medium)
           .fontColor(TEXT_PRIMARY)
-        Blank()
-        Text(`${this.voiceOffsetMs > 0 ? '+' : ''}${this.voiceOffsetMs}ms`)
-          .fontSize(14)
-          .fontColor(TEXT_SECONDARY)
+
+        Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
+          this.SelectChip('每一拍', !this.firstBeatOnly,
+            (): void => { this.vm.setVoiceMode('every'); });
+          this.SelectChip('仅首拍', this.firstBeatOnly,
+            (): void => { this.vm.setVoiceMode('first'); });
+        }
+        .width('100%')
       }
       .width('100%')
-      .padding({ left: 4, right: 4 })
-      .margin({ bottom: 8 })
 
-      Slider({
-        value: this.voiceOffsetMs,
-        min: -200,
-        max: 200,
-        step: 10,
-        style: SliderStyle.OutSet
-      })
-        .trackColor(DOT_NORMAL)
-        .selectedColor(ACCENT)
-        .blockColor(TEXT_PRIMARY)
-        .onChange((value: number): void => {
-          this.vm.setVoiceOffsetMs(value);
-          this.syncState();
+      Column({ space: 10 }) {
+        Row() {
+          Text('语音偏移')
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(TEXT_PRIMARY)
+          Blank()
+          Text(`${this.voiceOffsetMs > 0 ? '+' : ''}${this.voiceOffsetMs} ms`)
+            .fontSize(14)
+            .fontColor(TEXT_SECONDARY)
+        }
+        .width('100%')
+
+        Slider({
+          value: this.voiceOffsetMs,
+          min: -200,
+          max: 200,
+          step: 10,
+          style: SliderStyle.OutSet
         })
+          .trackColor('#D9E0F1')
+          .selectedColor(PRIMARY)
+          .blockColor('#FFFFFF')
+          .onChange((value: number): void => {
+            this.vm.setVoiceOffsetMs(value);
+          })
+
+        Row() {
+          Text('提前')
+            .fontSize(12)
+            .fontColor(TEXT_MUTED)
+          Blank()
+          Text('延后')
+            .fontSize(12)
+            .fontColor(TEXT_MUTED)
+        }
+        .width('100%')
+      }
+      .width('100%')
     }
     .width('100%')
-    .padding(16)
-    .backgroundColor(CARD_BG)
-    .borderRadius(16)
+    .padding(18)
+    .backgroundColor(SURFACE_BG)
+    .borderRadius(24)
+  }
+
+  @Builder
+  CardTitle(title: string, desc: string) {
+    Column() {
+      Text(title)
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(TEXT_PRIMARY)
+
+      Text(desc)
+        .fontSize(12)
+        .fontColor(TEXT_SECONDARY)
+        .margin({ top: 4 })
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  ActionButton(label: string, onTap: () => void) {
+    Button(label)
+      .fontSize(14)
+      .fontColor(TEXT_PRIMARY)
+      .backgroundColor(CHIP_BG)
+      .borderRadius(14)
+      .width(64)
+      .height(38)
+      .margin({ left: 4, right: 4, top: 4, bottom: 4 })
+      .onClick((): void => {
+        onTap();
+      })
+  }
+
+  @Builder
+  SelectChip(label: string, selected: boolean, onTap: () => void) {
+    Button(label)
+      .fontSize(14)
+      .fontWeight(selected ? FontWeight.Medium : FontWeight.Regular)
+      .fontColor(selected ? PRIMARY : TEXT_SECONDARY)
+      .backgroundColor(selected ? CHIP_ACTIVE_BG : CHIP_BG)
+      .border({
+        width: 1,
+        color: selected ? PRIMARY_SOFT : BORDER_COLOR
+      })
+      .borderRadius(16)
+      .padding({ left: 12, right: 12 })
+      .height(38)
+      .margin({ right: 8, bottom: 8 })
+      .onClick((): void => {
+        onTap();
+      })
+  }
+
+  @Builder
+  StepperPanel(title: string, value: string, onDecrease: () => void, onIncrease: () => void) {
+    Column({ space: 10 }) {
+      Text(title)
+        .fontSize(13)
+        .fontColor(TEXT_SECONDARY)
+
+      Row({ space: 10 }) {
+        this.CircleStepper('-', onDecrease);
+
+        Text(value)
+          .fontSize(26)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(TEXT_PRIMARY)
+          .width(42)
+          .textAlign(TextAlign.Center)
+
+        this.CircleStepper('+', onIncrease);
+      }
+      .alignItems(VerticalAlign.Center)
+    }
+    .padding({ left: 14, right: 14, top: 14, bottom: 14 })
+    .backgroundColor(SURFACE_SUBTLE)
+    .borderRadius(18)
+    .margin({ bottom: 8 })
+  }
+
+  @Builder
+  CircleStepper(label: string, onTap: () => void) {
+    Button(label)
+      .fontSize(20)
+      .fontWeight(FontWeight.Bold)
+      .fontColor(TEXT_PRIMARY)
+      .backgroundColor('#FFFFFF')
+      .border({
+        width: 1,
+        color: BORDER_COLOR
+      })
+      .width(38)
+      .height(38)
+      .borderRadius(19)
+      .onClick((): void => {
+        onTap();
+      })
   }
 
   pageTransition() {
-    PageTransitionEnter({ type: RouteType.None, duration: 300 })
-      .slide(SlideEffect.Bottom)
+    PageTransitionEnter({ type: RouteType.None, duration: 250 })
       .opacity(0)
-    PageTransitionExit({ type: RouteType.None, duration: 200 })
-      .slide(SlideEffect.Bottom)
+    PageTransitionExit({ type: RouteType.None, duration: 180 })
       .opacity(0)
   }
 }

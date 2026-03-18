@@ -54,12 +54,31 @@
     "BUILD_OPTION": {
       "default-default": {
         "debuggable": true,
-        "copyFrom": "default"
+        "copyFrom": "default",
+        "externalNativeOptions": {
+          "path": "./src/main/cpp/CMakeLists.txt",
+          "arguments": "",
+          "abiFilters": [
+            "arm64-v8a",
+            "x86_64"
+          ],
+          "cppFlags": ""
+        }
       }
     },
     "BUILD_PROFILE_OPT": {
       "apiType": "stageMode",
-      "buildOption": {},
+      "buildOption": {
+        "externalNativeOptions": {
+          "path": "./src/main/cpp/CMakeLists.txt",
+          "arguments": "",
+          "abiFilters": [
+            "arm64-v8a",
+            "x86_64"
+          ],
+          "cppFlags": ""
+        }
+      },
       "targets": [
         {
           "name": "default",
@@ -76,7 +95,7 @@
   "ohos-project": {
     "SELECT_PRODUCT_NAME": "default",
     "MODULE_BUILD_DIR": "C:\\Users\\a1258\\Desktop\\harmony_metronome_apk_app\\build",
-    "BUNDLE_NAME": "com.example.harmonymetronome",
+    "BUNDLE_NAME": "com.wenjianjian.metrome",
     "VERSION_CODE": 1000000,
     "VERSION_NAME": "1.0.0",
     "BUILD_PATH": {
@@ -104,13 +123,13 @@
             "name": "default",
             "type": "HarmonyOS",
             "material": {
-              "certpath": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.cer",
-              "keyAlias": "debugKey",
-              "keyPassword": "0000001BC404320102D48F38AB8F393BCBCA7BD054F967033F8A340900888CDA5CFA8A996EF99B0EDF98E6",
-              "profile": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.p7b",
+              "storeFile": "C:/Users/a1258/Desktop/harmony_metronome_apk_app/aa.p12",
+              "storePassword": "0000001C6B53F402E02D4A93B4943AB5C2B762F98EDE2A7F259E352593FDBC9AFAE6BEB305CCA814808E85BC",
+              "keyAlias": "harmony-metronome-release",
+              "keyPassword": "0000001C0DB2B653182718910D5AE2DAD3D099B22F6DC710B736F6B9BA9DA2528798ABDCB4D9DE12DBD1EFB2",
               "signAlg": "SHA256withECDSA",
-              "storeFile": "C:\\Users\\a1258\\.ohos\\config\\default_harmony_metronome_apk_app_eQPEfbH75HrMNy540RHi984vshccRxfKzXq0yL1UWwo=.p12",
-              "storePassword": "0000001B5C4379239E44B7E5613AEB16213AF65B02D3153891564EAA6214B437E9EDAB3FD6E02C31197D2B"
+              "profile": "C:\\Users\\a1258\\Downloads\\harmony_metrome_apk_appRelease.p7b",
+              "certpath": "C:\\Users\\a1258\\Downloads\\harmony_metrome_apk_app.cer"
             }
           }
         ],
