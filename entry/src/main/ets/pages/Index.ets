@@ -1,31 +1,8 @@
 import { common } from '@kit.AbilityKit';
 import { PreferencesManager } from '../data/PreferencesManager';
+import { APP_NAME, APP_TAGLINE, PRIVACY_POLICY_URL } from '../common/AppInfo';
+import { resolveTheme, AppThemePalette } from '../theme/AppTheme';
 import { MetronomeViewModel } from '../viewmodel/MetronomeViewModel';
-
-// 使用满足最小对比度要求的配色，避免浅色文字或图标叠在浅底色上。
-const PAGE_BG: string = '#F4F6FB';
-const SURFACE_BG: string = '#FFFFFF';
-const SURFACE_SUBTLE: string = '#EEF2FF';
-const PRIMARY: string = '#1D4ED8';
-const PRIMARY_SOFT: string = '#BFD1FF';
-const SUCCESS: string = '#0F766E';
-const TEXT_PRIMARY: string = '#172033';
-const TEXT_SECONDARY: string = '#4F596A';
-const TEXT_MUTED: string = '#5F6B7A';
-const BORDER_COLOR: string = '#C7D1E3';
-const CHIP_BG: string = '#F0F3FA';
-const CHIP_ACTIVE_BG: string = '#E0EAFF';
-const ACCENT_ACTIVE: string = '#1D4ED8';
-const ACCENT_INACTIVE: string = '#EDF2FB';
-const CURRENT_BEAT_BG: string = '#0F766E';
-const STATUS_ACTIVE_BG: string = '#DFF6EE';
-const STATUS_IDLE_BG: string = '#E8EDF5';
-const STOP_BUTTON_BG: string = '#DC2626';
-const OVERLAY_BG: string = '#B30F172A';
-const POLICY_TAG_BG: string = '#DBEAFE';
-const POLICY_TAG_TEXT: string = '#1E3A8A';
-const PRIVACY_POLICY_URL: string =
-  'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1909046125562706240';
 
 @Entry
 @Component
@@ -34,6 +11,8 @@ struct Index {
   private privacyPrefs: PreferencesManager = new PreferencesManager();
   private uiContext: common.UIAbilityContext | null = null;
   private privacyStatusLoaded: boolean = false;
+
+  @StorageProp('isDarkMode') isDarkMode: boolean = false;
 
   @State bpm: number = 120;
   @State meterNumerator: number = 4;
@@ -101,7 +80,7 @@ struct Index {
     }
   }
 
-  // 同意后再初始化业务 ViewModel，确保用户授权前应用不会进入可用态。
+  // 同意后再初始化业务 ViewModel，确保授权前应用不会进入可用态。
   private async ensureViewModelReady(): Promise<void> {
     if (this.viewModelInitialized || this.uiContext === null) {
       return;
@@ -173,6 +152,15 @@ struct Index {
     this.curBeat = this.vm.currentBeatIndex;
   }
 
+  private withVmSync(action: () => void): void {
+    action();
+    this.syncState();
+  }
+
+  private theme(): AppThemePalette {
+    return resolveTheme(this.isDarkMode);
+  }
+
   private errorMessageOf(error: Object): string {
     if (error instanceof Error && error.message.length > 0) {
       return error.message;
@@ -193,37 +181,39 @@ struct Index {
   }
 
   private beatIndexColor(idx: number): string {
+    const theme = this.theme();
     if (this.curBeat === idx) {
-      return CURRENT_BEAT_BG;
+      return theme.currentBeatBg;
     }
-    return this.isBeatAccented(idx) ? ACCENT_ACTIVE : TEXT_SECONDARY;
+    return this.isBeatAccented(idx) ? theme.accentActive : theme.textSecondary;
   }
 
   private beatBubbleColor(idx: number): string {
+    const theme = this.theme();
     if (this.curBeat === idx) {
-      return CURRENT_BEAT_BG;
+      return theme.currentBeatBg;
     }
-    return this.isBeatAccented(idx) ? ACCENT_ACTIVE : ACCENT_INACTIVE;
+    return this.isBeatAccented(idx) ? theme.accentActive : theme.accentInactive;
   }
 
   private beatBubbleTextColor(idx: number): string {
     if (this.curBeat === idx || this.isBeatAccented(idx)) {
       return '#FFFFFF';
     }
-    return TEXT_PRIMARY;
+    return this.theme().textPrimary;
   }
 
   build() {
     Stack({ alignContent: Alignment.Center }) {
       if (this.privacyAccepted && this.viewModelInitialized) {
         Column() {
-          this.HeaderSection()
+          this.HeaderSection();
           Scroll() {
             Column({ space: 16 }) {
-              this.TransportCard()
-              this.MeterCard()
-              this.AccentCard()
-              this.VoiceCard()
+              this.TransportCard();
+              this.MeterCard();
+              this.AccentCard();
+              this.VoiceCard();
             }
             .width('100%')
             .padding({ left: 16, right: 16, top: 8, bottom: 28 })
@@ -235,33 +225,33 @@ struct Index {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor(PAGE_BG)
+        .backgroundColor(this.theme().pageBg)
       } else {
-        this.LockedShell()
+        this.LockedShell();
       }
 
       if (!this.privacyAccepted) {
-        this.PrivacyPolicyOverlay()
+        this.PrivacyPolicyOverlay();
       } else if (!this.viewModelInitialized) {
-        this.InitializingOverlay()
+        this.InitializingOverlay();
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(PAGE_BG)
+    .backgroundColor(this.theme().pageBg)
   }
 
   @Builder
   LockedShell() {
     Column({ space: 14 }) {
-      Text('节拍器')
+      Text(APP_NAME)
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
-        .fontColor(TEXT_PRIMARY)
+        .fontColor(this.theme().textPrimary)
 
-      Text('首次启动前需要完成隐私政策确认。')
+      Text(`首次启动前需要完成${APP_NAME}隐私政策确认。`)
         .fontSize(15)
-        .fontColor(TEXT_SECONDARY)
+        .fontColor(this.theme().textSecondary)
 
       if (this.privacyAccepted && !this.viewModelInitialized) {
         LoadingProgress()
@@ -269,16 +259,16 @@ struct Index {
           .height(36)
           .margin({ top: 12 })
 
-        Text('正在初始化节拍器...')
+        Text(`正在初始化${APP_NAME}...`)
           .fontSize(13)
-          .fontColor(TEXT_MUTED)
+          .fontColor(this.theme().textMuted)
       }
     }
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
     .padding(24)
-    .backgroundColor(PAGE_BG)
+    .backgroundColor(this.theme().pageBg)
   }
 
   @Builder
@@ -288,12 +278,12 @@ struct Index {
         .width(42)
         .height(42)
 
-      Text('正在完成授权后的初始化，请稍候。')
+      Text(`正在完成授权后的初始化，请稍候。`)
         .fontSize(14)
-        .fontColor(TEXT_PRIMARY)
+        .fontColor(this.theme().textPrimary)
     }
     .padding({ left: 28, right: 28, top: 24, bottom: 24 })
-    .backgroundColor('#F8FAFC')
+    .backgroundColor(this.theme().dialogBg)
     .borderRadius(24)
   }
 
@@ -301,24 +291,24 @@ struct Index {
   PrivacyPolicyOverlay() {
     Column() {
       Column({ space: 16 }) {
-        Text('用户隐私政策')
+        Text(`${APP_NAME}用户隐私政策`)
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor(TEXT_PRIMARY)
+          .fontColor(this.theme().textPrimary)
           .width('100%')
 
-        Text('为保障你的个人信息与使用权益，首次启动需要先阅读并同意隐私政策；未同意前，应用不会进入可使用状态。')
+        Text(`为保障你在使用${APP_NAME}过程中的个人信息与合法权益，首次启动需要先阅读并同意隐私政策；未同意前，应用不会进入可使用状态。`)
           .fontSize(14)
           .lineHeight(22)
-          .fontColor(TEXT_SECONDARY)
+          .fontColor(this.theme().textSecondary)
           .width('100%')
 
         Text('首次启动必读')
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(POLICY_TAG_TEXT)
+          .fontColor(this.theme().policyTagText)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor(POLICY_TAG_BG)
+          .backgroundColor(this.theme().policyTagBg)
           .borderRadius(14)
 
         if (this.privacyLoading) {
@@ -329,15 +319,15 @@ struct Index {
 
             Text('正在检查隐私授权状态...')
               .fontSize(14)
-              .fontColor(TEXT_SECONDARY)
+              .fontColor(this.theme().textSecondary)
           }
           .width('100%')
           .padding({ top: 12, bottom: 12 })
         } else {
           Scroll() {
             Column({ space: 12 }) {
-              this.PolicyBullet('应用会在本地保存节拍器参数，例如 BPM、拍号、重音和语音设置。')
-              this.PolicyBullet('音频播放与后台运行能力仅用于维持节拍器播放，不会在未同意前初始化。')
+              this.PolicyBullet(`${APP_NAME}会在本地保存节拍器参数，例如 BPM、拍号、重音和语音设置。`)
+              this.PolicyBullet(`音频播放与后台运行能力仅用于维持${APP_NAME}播放，不会在未同意前初始化。`)
               this.PolicyBullet('完整政策以华为云托管页面为准，点击下方按钮可查看原文。')
             }
             .width('100%')
@@ -348,11 +338,11 @@ struct Index {
           Button(this.privacyLinkOpening ? '正在打开完整政策...' : '查看完整隐私政策')
             .fontSize(15)
             .fontWeight(FontWeight.Medium)
-            .fontColor(PRIMARY)
-            .backgroundColor('#EFF6FF')
+            .fontColor(this.theme().primary)
+            .backgroundColor(this.theme().surfaceSubtle)
             .border({
               width: 1,
-              color: PRIMARY_SOFT
+              color: this.theme().primarySoft
             })
             .borderRadius(16)
             .width('100%')
@@ -365,15 +355,15 @@ struct Index {
             Text(this.privacyMessage)
               .fontSize(12)
               .lineHeight(18)
-              .fontColor(STOP_BUTTON_BG)
+              .fontColor(this.theme().danger)
               .width('100%')
           }
 
           Row({ space: 12 }) {
             Button(this.privacySubmitting ? '处理中...' : '不同意并退出')
               .fontSize(15)
-              .fontColor(TEXT_PRIMARY)
-              .backgroundColor('#E5E7EB')
+              .fontColor(this.theme().textPrimary)
+              .backgroundColor(this.theme().chipBg)
               .borderRadius(16)
               .width('48%')
               .height(52)
@@ -384,8 +374,8 @@ struct Index {
             Button(this.privacySubmitting ? '处理中...' : '同意并继续')
               .fontSize(15)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#FFFFFF')
-              .backgroundColor(PRIMARY)
+              .fontColor(this.theme().chipActiveText)
+              .backgroundColor(this.theme().primary)
               .borderRadius(16)
               .width('48%')
               .height(52)
@@ -398,13 +388,13 @@ struct Index {
       }
       .width('100%')
       .padding(22)
-      .backgroundColor(SURFACE_BG)
+      .backgroundColor(this.theme().dialogBg)
       .borderRadius(28)
     }
     .width('100%')
     .height('100%')
     .padding(18)
-    .backgroundColor(OVERLAY_BG)
+    .backgroundColor(this.theme().overlayBg)
     .justifyContent(FlexAlign.Center)
   }
 
@@ -414,13 +404,13 @@ struct Index {
       Text('•')
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .fontColor(PRIMARY)
+        .fontColor(this.theme().primary)
         .margin({ top: 2, right: 8 })
 
       Text(content)
         .fontSize(13)
         .lineHeight(20)
-        .fontColor(TEXT_PRIMARY)
+        .fontColor(this.theme().textPrimary)
         .layoutWeight(1)
     }
     .width('100%')
@@ -432,14 +422,14 @@ struct Index {
     Column() {
       Row() {
         Column() {
-          Text('节拍器')
+          Text(APP_NAME)
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
-            .fontColor(TEXT_PRIMARY)
+            .fontColor(this.theme().textPrimary)
 
-          Text('低延迟逐拍语音节拍器')
+          Text(APP_TAGLINE)
             .fontSize(13)
-            .fontColor(TEXT_SECONDARY)
+            .fontColor(this.theme().textSecondary)
             .margin({ top: 4 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -448,9 +438,9 @@ struct Index {
         Text(this.playing ? '播放中' : '已停止')
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.playing ? SUCCESS : TEXT_SECONDARY)
+          .fontColor(this.playing ? this.theme().success : this.theme().statusIdleText)
           .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .backgroundColor(this.playing ? STATUS_ACTIVE_BG : STATUS_IDLE_BG)
+          .backgroundColor(this.playing ? this.theme().statusActiveBg : this.theme().statusIdleBg)
           .borderRadius(16)
       }
       .width('100%')
@@ -468,21 +458,37 @@ struct Index {
       Text(this.bpm.toString())
         .fontSize(60)
         .fontWeight(FontWeight.Bold)
-        .fontColor(PRIMARY)
+        .fontColor(this.theme().primary)
         .width('100%')
         .textAlign(TextAlign.Center)
 
       Text('BPM')
         .fontSize(14)
-        .fontColor(TEXT_SECONDARY)
+        .fontColor(this.theme().textSecondary)
         .width('100%')
         .textAlign(TextAlign.Center)
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
-        this.ActionButton('-5', (): void => { this.vm.adjustBpm(-5); });
-        this.ActionButton('-1', (): void => { this.vm.adjustBpm(-1); });
-        this.ActionButton('+1', (): void => { this.vm.adjustBpm(1); });
-        this.ActionButton('+5', (): void => { this.vm.adjustBpm(5); });
+        this.ActionButton('-5', (): void => {
+          this.withVmSync((): void => {
+            this.vm.adjustBpm(-5);
+          });
+        });
+        this.ActionButton('-1', (): void => {
+          this.withVmSync((): void => {
+            this.vm.adjustBpm(-1);
+          });
+        });
+        this.ActionButton('+1', (): void => {
+          this.withVmSync((): void => {
+            this.vm.adjustBpm(1);
+          });
+        });
+        this.ActionButton('+5', (): void => {
+          this.withVmSync((): void => {
+            this.vm.adjustBpm(5);
+          });
+        });
       }
       .width('100%')
 
@@ -493,21 +499,23 @@ struct Index {
         step: 1,
         style: SliderStyle.OutSet
       })
-        .trackColor('#D9E0F1')
-        .selectedColor(PRIMARY)
-        .blockColor('#FFFFFF')
+        .trackColor(this.theme().sliderTrack)
+        .selectedColor(this.theme().primary)
+        .blockColor(this.theme().sliderBlock)
         .onChange((value: number): void => {
-          this.vm.setBpm(value);
+          this.withVmSync((): void => {
+            this.vm.setBpm(value);
+          });
         })
 
       Row() {
         Text('30')
           .fontSize(12)
-          .fontColor(TEXT_MUTED)
+          .fontColor(this.theme().textMuted)
         Blank()
         Text('300')
           .fontSize(12)
-          .fontColor(TEXT_MUTED)
+          .fontColor(this.theme().textMuted)
       }
       .width('100%')
 
@@ -520,14 +528,18 @@ struct Index {
       .width('100%')
       .height(56)
       .borderRadius(18)
-      .backgroundColor(this.playing ? STOP_BUTTON_BG : PRIMARY)
+      .backgroundColor(this.playing ? this.theme().danger : this.theme().primary)
       .onClick((): void => {
-        this.vm.togglePlay().catch((_: Object): void => {});
+        this.vm.togglePlay()
+          .then((): void => {
+            this.syncState();
+          })
+          .catch((_: Object): void => {});
       })
     }
     .width('100%')
     .padding(18)
-    .backgroundColor(SURFACE_BG)
+    .backgroundColor(this.theme().surfaceBg)
     .borderRadius(24)
   }
 
@@ -537,44 +549,68 @@ struct Index {
       this.CardTitle('拍号', '常用拍号与自定义拍值')
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-        this.SelectChip('2/4', this.meterNumerator === 2 && this.meterDenominator === 4,
-          (): void => { this.vm.setMeterPreset(2, 4); });
-        this.SelectChip('3/4', this.meterNumerator === 3 && this.meterDenominator === 4,
-          (): void => { this.vm.setMeterPreset(3, 4); });
-        this.SelectChip('4/4', this.meterNumerator === 4 && this.meterDenominator === 4,
-          (): void => { this.vm.setMeterPreset(4, 4); });
-        this.SelectChip('6/8', this.meterNumerator === 6 && this.meterDenominator === 8,
-          (): void => { this.vm.setMeterPreset(6, 8); });
+        this.SelectChip('2/4', this.meterNumerator === 2 && this.meterDenominator === 4, (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeterPreset(2, 4);
+          });
+        });
+        this.SelectChip('3/4', this.meterNumerator === 3 && this.meterDenominator === 4, (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeterPreset(3, 4);
+          });
+        });
+        this.SelectChip('4/4', this.meterNumerator === 4 && this.meterDenominator === 4, (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeterPreset(4, 4);
+          });
+        });
+        this.SelectChip('6/8', this.meterNumerator === 6 && this.meterDenominator === 8, (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeterPreset(6, 8);
+          });
+        });
       }
       .width('100%')
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
-        this.StepperPanel('拍数', this.meterNumerator.toString(),
-          (): void => { this.vm.setMeter(this.meterNumerator - 1, this.meterDenominator); },
-          (): void => { this.vm.setMeter(this.meterNumerator + 1, this.meterDenominator); })
+        this.StepperPanel('拍数', this.meterNumerator.toString(), (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeter(this.meterNumerator - 1, this.meterDenominator);
+          });
+        }, (): void => {
+          this.withVmSync((): void => {
+            this.vm.setMeter(this.meterNumerator + 1, this.meterDenominator);
+          });
+        })
 
         Text('/')
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
-          .fontColor(TEXT_MUTED)
+          .fontColor(this.theme().textMuted)
           .margin({ left: 12, right: 12 })
 
-        this.StepperPanel('音符', this.meterDenominator.toString(),
-          (): void => { this.vm.prevDenominator(); },
-          (): void => { this.vm.nextDenominator(); })
+        this.StepperPanel('音符', this.meterDenominator.toString(), (): void => {
+          this.withVmSync((): void => {
+            this.vm.prevDenominator();
+          });
+        }, (): void => {
+          this.withVmSync((): void => {
+            this.vm.nextDenominator();
+          });
+        })
       }
       .width('100%')
     }
     .width('100%')
     .padding(18)
-    .backgroundColor(SURFACE_BG)
+    .backgroundColor(this.theme().surfaceBg)
     .borderRadius(24)
   }
 
   @Builder
   AccentCard() {
     Column({ space: 14 }) {
-      this.CardTitle('重音模式', '点按拍点切换重音，当前拍会保持高亮')
+      this.CardTitle('重音模式', '点击拍点切换重音，当前拍会保持高亮')
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
         ForEach(
@@ -595,10 +631,10 @@ struct Index {
                   .backgroundColor(this.beatBubbleColor(idx))
                   .border({
                     width: this.curBeat === idx ? 0 : 1,
-                    color: this.isBeatAccented(idx) ? PRIMARY_SOFT : BORDER_COLOR
+                    color: this.isBeatAccented(idx) ? this.theme().primarySoft : this.theme().borderColor
                   })
 
-                Text(this.isBeatAccented(idx) ? '强' : '弱')
+                Text(this.isBeatAccented(idx) ? '开' : '关')
                   .fontSize(14)
                   .fontWeight(FontWeight.Bold)
                   .fontColor(this.beatBubbleTextColor(idx))
@@ -607,7 +643,9 @@ struct Index {
             .alignItems(HorizontalAlign.Center)
             .margin({ right: 10, bottom: 12 })
             .onClick((): void => {
-              this.vm.toggleAccent(idx);
+              this.withVmSync((): void => {
+                this.vm.toggleAccent(idx);
+              });
             })
           },
           (idx: number): string => `${idx}_${this.accentBitmask}_${this.curBeat}`
@@ -617,7 +655,7 @@ struct Index {
     }
     .width('100%')
     .padding(18)
-    .backgroundColor(SURFACE_BG)
+    .backgroundColor(this.theme().surfaceBg)
     .borderRadius(24)
   }
 
@@ -630,12 +668,24 @@ struct Index {
         Text('语言')
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor(TEXT_PRIMARY)
+          .fontColor(this.theme().textPrimary)
 
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-          this.SelectChip('中文', this.lang === 'zh', (): void => { this.vm.setLanguage('zh'); });
-          this.SelectChip('英语', this.lang === 'en', (): void => { this.vm.setLanguage('en'); });
-          this.SelectChip('日语', this.lang === 'ja', (): void => { this.vm.setLanguage('ja'); });
+          this.SelectChip('中文', this.lang === 'zh', (): void => {
+            this.withVmSync((): void => {
+              this.vm.setLanguage('zh');
+            });
+          });
+          this.SelectChip('英语', this.lang === 'en', (): void => {
+            this.withVmSync((): void => {
+              this.vm.setLanguage('en');
+            });
+          });
+          this.SelectChip('日语', this.lang === 'ja', (): void => {
+            this.withVmSync((): void => {
+              this.vm.setLanguage('ja');
+            });
+          });
         }
         .width('100%')
       }
@@ -645,13 +695,19 @@ struct Index {
         Text('播报模式')
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor(TEXT_PRIMARY)
+          .fontColor(this.theme().textPrimary)
 
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-          this.SelectChip('每一拍', !this.firstBeatOnly,
-            (): void => { this.vm.setVoiceMode('every'); });
-          this.SelectChip('仅首拍', this.firstBeatOnly,
-            (): void => { this.vm.setVoiceMode('first'); });
+          this.SelectChip('每一拍', !this.firstBeatOnly, (): void => {
+            this.withVmSync((): void => {
+              this.vm.setVoiceMode('every');
+            });
+          });
+          this.SelectChip('仅首拍', this.firstBeatOnly, (): void => {
+            this.withVmSync((): void => {
+              this.vm.setVoiceMode('first');
+            });
+          });
         }
         .width('100%')
       }
@@ -662,11 +718,11 @@ struct Index {
           Text('语音偏移')
             .fontSize(14)
             .fontWeight(FontWeight.Medium)
-            .fontColor(TEXT_PRIMARY)
+            .fontColor(this.theme().textPrimary)
           Blank()
           Text(`${this.voiceOffsetMs > 0 ? '+' : ''}${this.voiceOffsetMs} ms`)
             .fontSize(14)
-            .fontColor(TEXT_SECONDARY)
+            .fontColor(this.theme().textSecondary)
         }
         .width('100%')
 
@@ -677,21 +733,23 @@ struct Index {
           step: 10,
           style: SliderStyle.OutSet
         })
-          .trackColor('#D9E0F1')
-          .selectedColor(PRIMARY)
-          .blockColor('#FFFFFF')
+          .trackColor(this.theme().sliderTrack)
+          .selectedColor(this.theme().primary)
+          .blockColor(this.theme().sliderBlock)
           .onChange((value: number): void => {
-            this.vm.setVoiceOffsetMs(value);
+            this.withVmSync((): void => {
+              this.vm.setVoiceOffsetMs(value);
+            });
           })
 
         Row() {
           Text('提前')
             .fontSize(12)
-            .fontColor(TEXT_MUTED)
+            .fontColor(this.theme().textMuted)
           Blank()
           Text('延后')
             .fontSize(12)
-            .fontColor(TEXT_MUTED)
+            .fontColor(this.theme().textMuted)
         }
         .width('100%')
       }
@@ -699,7 +757,7 @@ struct Index {
     }
     .width('100%')
     .padding(18)
-    .backgroundColor(SURFACE_BG)
+    .backgroundColor(this.theme().surfaceBg)
     .borderRadius(24)
   }
 
@@ -709,11 +767,11 @@ struct Index {
       Text(title)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor(TEXT_PRIMARY)
+        .fontColor(this.theme().textPrimary)
 
       Text(desc)
         .fontSize(12)
-        .fontColor(TEXT_SECONDARY)
+        .fontColor(this.theme().textSecondary)
         .margin({ top: 4 })
     }
     .width('100%')
@@ -724,8 +782,8 @@ struct Index {
   ActionButton(label: string, onTap: () => void) {
     Button(label)
       .fontSize(14)
-      .fontColor(TEXT_PRIMARY)
-      .backgroundColor(CHIP_BG)
+      .fontColor(this.theme().textPrimary)
+      .backgroundColor(this.theme().chipBg)
       .borderRadius(14)
       .width(64)
       .height(38)
@@ -739,12 +797,12 @@ struct Index {
   SelectChip(label: string, selected: boolean, onTap: () => void) {
     Button(label)
       .fontSize(14)
-      .fontWeight(selected ? FontWeight.Medium : FontWeight.Regular)
-      .fontColor(selected ? PRIMARY : TEXT_SECONDARY)
-      .backgroundColor(selected ? CHIP_ACTIVE_BG : CHIP_BG)
+      .fontWeight(selected ? FontWeight.Bold : FontWeight.Regular)
+      .fontColor(selected ? this.theme().chipActiveText : this.theme().textSecondary)
+      .backgroundColor(selected ? this.theme().chipActiveBg : this.theme().chipBg)
       .border({
         width: 1,
-        color: selected ? PRIMARY_SOFT : BORDER_COLOR
+        color: selected ? this.theme().primarySoft : this.theme().borderColor
       })
       .borderRadius(16)
       .padding({ left: 12, right: 12 })
@@ -760,7 +818,7 @@ struct Index {
     Column({ space: 10 }) {
       Text(title)
         .fontSize(13)
-        .fontColor(TEXT_SECONDARY)
+        .fontColor(this.theme().textSecondary)
 
       Row({ space: 10 }) {
         this.CircleStepper('-', onDecrease);
@@ -768,7 +826,7 @@ struct Index {
         Text(value)
           .fontSize(26)
           .fontWeight(FontWeight.Bold)
-          .fontColor(TEXT_PRIMARY)
+          .fontColor(this.theme().textPrimary)
           .width(42)
           .textAlign(TextAlign.Center)
 
@@ -777,7 +835,7 @@ struct Index {
       .alignItems(VerticalAlign.Center)
     }
     .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-    .backgroundColor(SURFACE_SUBTLE)
+    .backgroundColor(this.theme().stepperPanelBg)
     .borderRadius(18)
     .margin({ bottom: 8 })
   }
@@ -787,11 +845,11 @@ struct Index {
     Button(label)
       .fontSize(20)
       .fontWeight(FontWeight.Bold)
-      .fontColor(TEXT_PRIMARY)
-      .backgroundColor('#FFFFFF')
+      .fontColor(this.theme().textPrimary)
+      .backgroundColor(this.theme().stepperButtonBg)
       .border({
         width: 1,
-        color: BORDER_COLOR
+        color: this.theme().borderColor
       })
       .width(38)
       .height(38)
