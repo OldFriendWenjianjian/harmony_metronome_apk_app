@@ -1,6 +1,5 @@
 import { common } from '@kit.AbilityKit';
-import { PreferencesManager } from '../data/PreferencesManager';
-import { APP_NAME, APP_TAGLINE, PRIVACY_POLICY_URL } from '../common/AppInfo';
+import { APP_NAME, APP_TAGLINE } from '../common/AppInfo';
 import { resolveTheme, AppThemePalette } from '../theme/AppTheme';
 import { MetronomeViewModel } from '../viewmodel/MetronomeViewModel';
 
@@ -8,9 +7,7 @@ import { MetronomeViewModel } from '../viewmodel/MetronomeViewModel';
 @Component
 struct Index {
   private vm: MetronomeViewModel = new MetronomeViewModel();
-  private privacyPrefs: PreferencesManager = new PreferencesManager();
   private uiContext: common.UIAbilityContext | null = null;
-  private privacyStatusLoaded: boolean = false;
 
   @StorageProp('isDarkMode') isDarkMode: boolean = false;
 
@@ -23,32 +20,24 @@ struct Index {
   @State voiceOffsetMs: number = 0;
   @State playing: boolean = false;
   @State curBeat: number = -1;
-  @State privacyAccepted: boolean = false;
-  @State privacyLoading: boolean = true;
-  @State privacySubmitting: boolean = false;
-  @State privacyLinkOpening: boolean = false;
-  @State privacyMessage: string = '';
   @State viewModelInitialized: boolean = false;
+  @State initInProgress: boolean = false;
+  @State initErrorMessage: string = '';
 
   aboutToAppear(): void {
     this.vm.setOnStateChange((): void => {
       this.syncState();
     });
     this.syncState();
+
     const ctx = AppStorage.get<common.UIAbilityContext>('uiAbilityContext');
-    if (ctx !== undefined) {
-      this.uiContext = ctx;
-      if (this.privacyStatusLoaded) {
-        if (this.privacyAccepted && !this.viewModelInitialized) {
-          this.ensureViewModelReady().catch((_: Object): void => {});
-        }
-      } else {
-        this.bootstrapPrivacyGate(ctx).catch((_: Object): void => {});
-      }
-    } else {
-      this.privacyLoading = false;
-      this.privacyMessage = '应用上下文尚未就绪，请重新启动后重试。';
+    if (ctx === undefined) {
+      this.initErrorMessage = '应用上下文尚未就绪，请重新打开后再试。';
+      return;
     }
+
+    this.uiContext = ctx;
+    this.ensureViewModelReady().catch((_: Object): void => {});
   }
 
   aboutToDisappear(): void {
@@ -58,85 +47,22 @@ struct Index {
     }
   }
 
-  // 首次启动前先读取隐私同意状态，未同意时不初始化音频与后台能力。
-  private async bootstrapPrivacyGate(context: common.UIAbilityContext): Promise<void> {
-    this.privacyLoading = true;
-    this.privacyMessage = '';
-    try {
-      await this.privacyPrefs.init(context);
-      this.privacyAccepted = await this.privacyPrefs.hasAcceptedPrivacyPolicy();
-      this.privacyStatusLoaded = true;
-      if (this.privacyAccepted) {
-        await this.ensureViewModelReady();
-      }
-    } catch (e) {
-      if (this.privacyAccepted) {
-        this.privacyMessage = `主界面初始化失败：${this.errorMessageOf(e)}`;
-      } else {
-        this.privacyMessage = `隐私状态读取失败：${this.errorMessageOf(e)}`;
-      }
-    } finally {
-      this.privacyLoading = false;
-    }
-  }
-
-  // 同意后再初始化业务 ViewModel，确保授权前应用不会进入可用态。
+  // 保留外部/系统级的隐私同意，页面内部直接初始化业务。
   private async ensureViewModelReady(): Promise<void> {
-    if (this.viewModelInitialized || this.uiContext === null) {
+    if (this.viewModelInitialized || this.uiContext === null || this.initInProgress) {
       return;
     }
-    await this.vm.init(this.uiContext);
-    this.viewModelInitialized = true;
-    this.privacyMessage = '';
-    this.syncState();
-  }
 
-  private async openPrivacyPolicy(): Promise<void> {
-    if (this.uiContext === null || this.privacyLinkOpening) {
-      return;
-    }
-    this.privacyLinkOpening = true;
-    this.privacyMessage = '';
+    this.initInProgress = true;
+    this.initErrorMessage = '';
     try {
-      await this.uiContext.openLink(PRIVACY_POLICY_URL);
-    } catch (_) {
-      this.privacyMessage = `无法自动打开完整政策，请手动访问：${PRIVACY_POLICY_URL}`;
+      await this.vm.init(this.uiContext);
+      this.viewModelInitialized = true;
+      this.syncState();
+    } catch (error) {
+      this.initErrorMessage = `初始化失败：${this.errorMessageOf(error)}`;
     } finally {
-      this.privacyLinkOpening = false;
-    }
-  }
-
-  private async acceptPrivacyPolicy(): Promise<void> {
-    if (this.uiContext === null || this.privacySubmitting) {
-      return;
-    }
-    this.privacySubmitting = true;
-    this.privacyMessage = '';
-    try {
-      await this.privacyPrefs.init(this.uiContext);
-      await this.privacyPrefs.setPrivacyPolicyAccepted(true);
-      this.privacyAccepted = true;
-      this.privacyStatusLoaded = true;
-      await this.ensureViewModelReady();
-    } catch (e) {
-      this.privacyAccepted = false;
-      this.privacyMessage = `保存隐私同意状态失败：${this.errorMessageOf(e)}`;
-    } finally {
-      this.privacySubmitting = false;
-    }
-  }
-
-  private async declinePrivacyPolicy(): Promise<void> {
-    if (this.uiContext === null || this.privacySubmitting) {
-      return;
-    }
-    this.privacySubmitting = true;
-    this.privacyMessage = '';
-    try {
-      await this.uiContext.terminateSelf();
-    } catch (_) {
-      this.privacySubmitting = false;
-      this.privacyMessage = '无法自动退出应用，请手动关闭后再决定是否同意。';
+      this.initInProgress = false;
     }
   }
 
@@ -204,62 +130,69 @@ struct Index {
   }
 
   build() {
-    Stack({ alignContent: Alignment.Center }) {
-      if (this.privacyAccepted && this.viewModelInitialized) {
-        Column() {
-          this.HeaderSection();
-          Scroll() {
-            Column({ space: 16 }) {
-              this.TransportCard();
-              this.MeterCard();
-              this.AccentCard();
-              this.VoiceCard();
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16, top: 8, bottom: 28 })
+    if (this.viewModelInitialized) {
+      Column() {
+        this.HeaderSection();
+        Scroll() {
+          Column({ space: 16 }) {
+            this.TransportCard();
+            this.MeterCard();
+            this.AccentCard();
+            this.VoiceCard();
           }
-          .scrollable(ScrollDirection.Vertical)
-          .edgeEffect(EdgeEffect.Spring)
-          .layoutWeight(1)
           .width('100%')
+          .padding({ left: 16, right: 16, top: 8, bottom: 28 })
         }
+        .scrollable(ScrollDirection.Vertical)
+        .edgeEffect(EdgeEffect.Spring)
+        .layoutWeight(1)
         .width('100%')
-        .height('100%')
-        .backgroundColor(this.theme().pageBg)
-      } else {
-        this.LockedShell();
       }
-
-      if (!this.privacyAccepted) {
-        this.PrivacyPolicyOverlay();
-      } else if (!this.viewModelInitialized) {
-        this.InitializingOverlay();
-      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(this.theme().pageBg)
+    } else {
+      this.StartupShell();
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.theme().pageBg)
   }
 
   @Builder
-  LockedShell() {
-    Column({ space: 14 }) {
+  StartupShell() {
+    Column({ space: 16 }) {
       Text(APP_NAME)
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(this.theme().textPrimary)
 
-      Text(`首次启动前需要完成${APP_NAME}隐私政策确认。`)
+      Text(APP_TAGLINE)
         .fontSize(15)
         .fontColor(this.theme().textSecondary)
+        .textAlign(TextAlign.Center)
 
-      if (this.privacyAccepted && !this.viewModelInitialized) {
+      if (this.initErrorMessage.length > 0) {
+        Text(this.initErrorMessage)
+          .fontSize(13)
+          .lineHeight(20)
+          .fontColor(this.theme().danger)
+          .textAlign(TextAlign.Center)
+
+        Button('重新初始化')
+          .fontSize(15)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.theme().chipActiveText)
+          .backgroundColor(this.theme().primary)
+          .borderRadius(16)
+          .padding({ left: 18, right: 18, top: 12, bottom: 12 })
+          .onClick((): void => {
+            this.ensureViewModelReady().catch((_: Object): void => {});
+          })
+      } else {
         LoadingProgress()
-          .width(36)
-          .height(36)
-          .margin({ top: 12 })
+          .width(38)
+          .height(38)
+          .margin({ top: 8 })
 
-        Text(`正在初始化${APP_NAME}...`)
+        Text(this.initInProgress ? '正在准备节拍器，请稍候…' : '正在载入界面…')
           .fontSize(13)
           .fontColor(this.theme().textMuted)
       }
@@ -267,154 +200,9 @@ struct Index {
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
     .padding(24)
     .backgroundColor(this.theme().pageBg)
-  }
-
-  @Builder
-  InitializingOverlay() {
-    Column({ space: 14 }) {
-      LoadingProgress()
-        .width(42)
-        .height(42)
-
-      Text(`正在完成授权后的初始化，请稍候。`)
-        .fontSize(14)
-        .fontColor(this.theme().textPrimary)
-    }
-    .padding({ left: 28, right: 28, top: 24, bottom: 24 })
-    .backgroundColor(this.theme().dialogBg)
-    .borderRadius(24)
-  }
-
-  @Builder
-  PrivacyPolicyOverlay() {
-    Column() {
-      Column({ space: 16 }) {
-        Text(`${APP_NAME}用户隐私政策`)
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.theme().textPrimary)
-          .width('100%')
-
-        Text(`为保障你在使用${APP_NAME}过程中的个人信息与合法权益，首次启动需要先阅读并同意隐私政策；未同意前，应用不会进入可使用状态。`)
-          .fontSize(14)
-          .lineHeight(22)
-          .fontColor(this.theme().textSecondary)
-          .width('100%')
-
-        Text('首次启动必读')
-          .fontSize(12)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.theme().policyTagText)
-          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor(this.theme().policyTagBg)
-          .borderRadius(14)
-
-        if (this.privacyLoading) {
-          Column({ space: 12 }) {
-            LoadingProgress()
-              .width(34)
-              .height(34)
-
-            Text('正在检查隐私授权状态...')
-              .fontSize(14)
-              .fontColor(this.theme().textSecondary)
-          }
-          .width('100%')
-          .padding({ top: 12, bottom: 12 })
-        } else {
-          Scroll() {
-            Column({ space: 12 }) {
-              this.PolicyBullet(`${APP_NAME}会在本地保存节拍器参数，例如 BPM、拍号、重音和语音设置。`)
-              this.PolicyBullet(`音频播放与后台运行能力仅用于维持${APP_NAME}播放，不会在未同意前初始化。`)
-              this.PolicyBullet('完整政策以华为云托管页面为准，点击下方按钮可查看原文。')
-            }
-            .width('100%')
-          }
-          .width('100%')
-          .height(144)
-
-          Button(this.privacyLinkOpening ? '正在打开完整政策...' : '查看完整隐私政策')
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(this.theme().primary)
-            .backgroundColor(this.theme().surfaceSubtle)
-            .border({
-              width: 1,
-              color: this.theme().primarySoft
-            })
-            .borderRadius(16)
-            .width('100%')
-            .height(48)
-            .onClick((): void => {
-              this.openPrivacyPolicy().catch((_: Object): void => {});
-            })
-
-          if (this.privacyMessage.length > 0) {
-            Text(this.privacyMessage)
-              .fontSize(12)
-              .lineHeight(18)
-              .fontColor(this.theme().danger)
-              .width('100%')
-          }
-
-          Row({ space: 12 }) {
-            Button(this.privacySubmitting ? '处理中...' : '不同意并退出')
-              .fontSize(15)
-              .fontColor(this.theme().textPrimary)
-              .backgroundColor(this.theme().chipBg)
-              .borderRadius(16)
-              .width('48%')
-              .height(52)
-              .onClick((): void => {
-                this.declinePrivacyPolicy().catch((_: Object): void => {});
-              })
-
-            Button(this.privacySubmitting ? '处理中...' : '同意并继续')
-              .fontSize(15)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(this.theme().chipActiveText)
-              .backgroundColor(this.theme().primary)
-              .borderRadius(16)
-              .width('48%')
-              .height(52)
-              .onClick((): void => {
-                this.acceptPrivacyPolicy().catch((_: Object): void => {});
-              })
-          }
-          .width('100%')
-        }
-      }
-      .width('100%')
-      .padding(22)
-      .backgroundColor(this.theme().dialogBg)
-      .borderRadius(28)
-    }
-    .width('100%')
-    .height('100%')
-    .padding(18)
-    .backgroundColor(this.theme().overlayBg)
-    .justifyContent(FlexAlign.Center)
-  }
-
-  @Builder
-  PolicyBullet(content: string) {
-    Row() {
-      Text('•')
-        .fontSize(16)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.theme().primary)
-        .margin({ top: 2, right: 8 })
-
-      Text(content)
-        .fontSize(13)
-        .lineHeight(20)
-        .fontColor(this.theme().textPrimary)
-        .layoutWeight(1)
-    }
-    .width('100%')
-    .alignItems(VerticalAlign.Top)
   }
 
   @Builder
@@ -545,43 +333,121 @@ struct Index {
 
   @Builder
   MeterCard() {
+    // ArkUI 对带动态参数的 @Builder 有复用倾向，直接绑定页面 @State，避免点击后停留旧值。
     Column({ space: 16 }) {
       this.CardTitle('拍号', '常用拍号与自定义拍值')
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-        this.SelectChip('2/4', this.meterNumerator === 2 && this.meterDenominator === 4, (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeterPreset(2, 4);
-          });
-        });
-        this.SelectChip('3/4', this.meterNumerator === 3 && this.meterDenominator === 4, (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeterPreset(3, 4);
-          });
-        });
-        this.SelectChip('4/4', this.meterNumerator === 4 && this.meterDenominator === 4, (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeterPreset(4, 4);
-          });
-        });
-        this.SelectChip('6/8', this.meterNumerator === 6 && this.meterDenominator === 8, (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeterPreset(6, 8);
-          });
-        });
+        Button('2/4')
+          .fontSize(14)
+          .fontWeight(this.meterNumerator === 2 && this.meterDenominator === 4 ? FontWeight.Bold : FontWeight.Regular)
+          .fontColor(this.meterNumerator === 2 && this.meterDenominator === 4 ? this.theme().chipActiveText : this.theme().textSecondary)
+          .backgroundColor(this.meterNumerator === 2 && this.meterDenominator === 4 ? this.theme().chipActiveBg : this.theme().chipBg)
+          .border({
+            width: 1,
+            color: this.meterNumerator === 2 && this.meterDenominator === 4 ? this.theme().primarySoft : this.theme().borderColor
+          })
+          .borderRadius(16)
+          .padding({ left: 12, right: 12 })
+          .height(38)
+          .margin({ right: 8, bottom: 8 })
+          .onClick((): void => {
+            this.withVmSync((): void => {
+              this.vm.setMeterPreset(2, 4);
+            });
+          })
+
+        Button('3/4')
+          .fontSize(14)
+          .fontWeight(this.meterNumerator === 3 && this.meterDenominator === 4 ? FontWeight.Bold : FontWeight.Regular)
+          .fontColor(this.meterNumerator === 3 && this.meterDenominator === 4 ? this.theme().chipActiveText : this.theme().textSecondary)
+          .backgroundColor(this.meterNumerator === 3 && this.meterDenominator === 4 ? this.theme().chipActiveBg : this.theme().chipBg)
+          .border({
+            width: 1,
+            color: this.meterNumerator === 3 && this.meterDenominator === 4 ? this.theme().primarySoft : this.theme().borderColor
+          })
+          .borderRadius(16)
+          .padding({ left: 12, right: 12 })
+          .height(38)
+          .margin({ right: 8, bottom: 8 })
+          .onClick((): void => {
+            this.withVmSync((): void => {
+              this.vm.setMeterPreset(3, 4);
+            });
+          })
+
+        Button('4/4')
+          .fontSize(14)
+          .fontWeight(this.meterNumerator === 4 && this.meterDenominator === 4 ? FontWeight.Bold : FontWeight.Regular)
+          .fontColor(this.meterNumerator === 4 && this.meterDenominator === 4 ? this.theme().chipActiveText : this.theme().textSecondary)
+          .backgroundColor(this.meterNumerator === 4 && this.meterDenominator === 4 ? this.theme().chipActiveBg : this.theme().chipBg)
+          .border({
+            width: 1,
+            color: this.meterNumerator === 4 && this.meterDenominator === 4 ? this.theme().primarySoft : this.theme().borderColor
+          })
+          .borderRadius(16)
+          .padding({ left: 12, right: 12 })
+          .height(38)
+          .margin({ right: 8, bottom: 8 })
+          .onClick((): void => {
+            this.withVmSync((): void => {
+              this.vm.setMeterPreset(4, 4);
+            });
+          })
+
+        Button('6/8')
+          .fontSize(14)
+          .fontWeight(this.meterNumerator === 6 && this.meterDenominator === 8 ? FontWeight.Bold : FontWeight.Regular)
+          .fontColor(this.meterNumerator === 6 && this.meterDenominator === 8 ? this.theme().chipActiveText : this.theme().textSecondary)
+          .backgroundColor(this.meterNumerator === 6 && this.meterDenominator === 8 ? this.theme().chipActiveBg : this.theme().chipBg)
+          .border({
+            width: 1,
+            color: this.meterNumerator === 6 && this.meterDenominator === 8 ? this.theme().primarySoft : this.theme().borderColor
+          })
+          .borderRadius(16)
+          .padding({ left: 12, right: 12 })
+          .height(38)
+          .margin({ right: 8, bottom: 8 })
+          .onClick((): void => {
+            this.withVmSync((): void => {
+              this.vm.setMeterPreset(6, 8);
+            });
+          })
       }
       .width('100%')
 
       Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Center }) {
-        this.StepperPanel('拍数', this.meterNumerator.toString(), (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeter(this.meterNumerator - 1, this.meterDenominator);
-          });
-        }, (): void => {
-          this.withVmSync((): void => {
-            this.vm.setMeter(this.meterNumerator + 1, this.meterDenominator);
-          });
-        })
+        Column({ space: 10 }) {
+          Text('拍数')
+            .fontSize(13)
+            .fontColor(this.theme().textSecondary)
+
+          Row({ space: 10 }) {
+            this.CircleStepper('-', (): void => {
+              this.withVmSync((): void => {
+                this.vm.setMeter(this.meterNumerator - 1, this.meterDenominator);
+              });
+            });
+
+            Text(this.meterNumerator.toString())
+              .fontSize(26)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(this.theme().textPrimary)
+              .width(42)
+              .textAlign(TextAlign.Center)
+
+            this.CircleStepper('+', (): void => {
+              this.withVmSync((): void => {
+                this.vm.setMeter(this.meterNumerator + 1, this.meterDenominator);
+              });
+            });
+          }
+          .alignItems(VerticalAlign.Center)
+        }
+        .padding({ left: 14, right: 14, top: 14, bottom: 14 })
+        .backgroundColor(this.theme().stepperPanelBg)
+        .borderRadius(18)
+        .margin({ bottom: 8 })
 
         Text('/')
           .fontSize(28)
@@ -589,15 +455,37 @@ struct Index {
           .fontColor(this.theme().textMuted)
           .margin({ left: 12, right: 12 })
 
-        this.StepperPanel('音符', this.meterDenominator.toString(), (): void => {
-          this.withVmSync((): void => {
-            this.vm.prevDenominator();
-          });
-        }, (): void => {
-          this.withVmSync((): void => {
-            this.vm.nextDenominator();
-          });
-        })
+        Column({ space: 10 }) {
+          Text('音符')
+            .fontSize(13)
+            .fontColor(this.theme().textSecondary)
+
+          Row({ space: 10 }) {
+            this.CircleStepper('-', (): void => {
+              this.withVmSync((): void => {
+                this.vm.prevDenominator();
+              });
+            });
+
+            Text(this.meterDenominator.toString())
+              .fontSize(26)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(this.theme().textPrimary)
+              .width(42)
+              .textAlign(TextAlign.Center)
+
+            this.CircleStepper('+', (): void => {
+              this.withVmSync((): void => {
+                this.vm.nextDenominator();
+              });
+            });
+          }
+          .alignItems(VerticalAlign.Center)
+        }
+        .padding({ left: 14, right: 14, top: 14, bottom: 14 })
+        .backgroundColor(this.theme().stepperPanelBg)
+        .borderRadius(18)
+        .margin({ bottom: 8 })
       }
       .width('100%')
     }
@@ -671,21 +559,62 @@ struct Index {
           .fontColor(this.theme().textPrimary)
 
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-          this.SelectChip('中文', this.lang === 'zh', (): void => {
-            this.withVmSync((): void => {
-              this.vm.setLanguage('zh');
-            });
-          });
-          this.SelectChip('英语', this.lang === 'en', (): void => {
-            this.withVmSync((): void => {
-              this.vm.setLanguage('en');
-            });
-          });
-          this.SelectChip('日语', this.lang === 'ja', (): void => {
-            this.withVmSync((): void => {
-              this.vm.setLanguage('ja');
-            });
-          });
+          Button('中文')
+            .fontSize(14)
+            .fontWeight(this.lang === 'zh' ? FontWeight.Bold : FontWeight.Regular)
+            .fontColor(this.lang === 'zh' ? this.theme().chipActiveText : this.theme().textSecondary)
+            .backgroundColor(this.lang === 'zh' ? this.theme().chipActiveBg : this.theme().chipBg)
+            .border({
+              width: 1,
+              color: this.lang === 'zh' ? this.theme().primarySoft : this.theme().borderColor
+            })
+            .borderRadius(16)
+            .padding({ left: 12, right: 12 })
+            .height(38)
+            .margin({ right: 8, bottom: 8 })
+            .onClick((): void => {
+              this.withVmSync((): void => {
+                this.vm.setLanguage('zh');
+              });
+            })
+
+          Button('英语')
+            .fontSize(14)
+            .fontWeight(this.lang === 'en' ? FontWeight.Bold : FontWeight.Regular)
+            .fontColor(this.lang === 'en' ? this.theme().chipActiveText : this.theme().textSecondary)
+            .backgroundColor(this.lang === 'en' ? this.theme().chipActiveBg : this.theme().chipBg)
+            .border({
+              width: 1,
+              color: this.lang === 'en' ? this.theme().primarySoft : this.theme().borderColor
+            })
+            .borderRadius(16)
+            .padding({ left: 12, right: 12 })
+            .height(38)
+            .margin({ right: 8, bottom: 8 })
+            .onClick((): void => {
+              this.withVmSync((): void => {
+                this.vm.setLanguage('en');
+              });
+            })
+
+          Button('日语')
+            .fontSize(14)
+            .fontWeight(this.lang === 'ja' ? FontWeight.Bold : FontWeight.Regular)
+            .fontColor(this.lang === 'ja' ? this.theme().chipActiveText : this.theme().textSecondary)
+            .backgroundColor(this.lang === 'ja' ? this.theme().chipActiveBg : this.theme().chipBg)
+            .border({
+              width: 1,
+              color: this.lang === 'ja' ? this.theme().primarySoft : this.theme().borderColor
+            })
+            .borderRadius(16)
+            .padding({ left: 12, right: 12 })
+            .height(38)
+            .margin({ right: 8, bottom: 8 })
+            .onClick((): void => {
+              this.withVmSync((): void => {
+                this.vm.setLanguage('ja');
+              });
+            })
         }
         .width('100%')
       }
@@ -698,16 +627,43 @@ struct Index {
           .fontColor(this.theme().textPrimary)
 
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.Start }) {
-          this.SelectChip('每一拍', !this.firstBeatOnly, (): void => {
-            this.withVmSync((): void => {
-              this.vm.setVoiceMode('every');
-            });
-          });
-          this.SelectChip('仅首拍', this.firstBeatOnly, (): void => {
-            this.withVmSync((): void => {
-              this.vm.setVoiceMode('first');
-            });
-          });
+          Button('每一拍')
+            .fontSize(14)
+            .fontWeight(!this.firstBeatOnly ? FontWeight.Bold : FontWeight.Regular)
+            .fontColor(!this.firstBeatOnly ? this.theme().chipActiveText : this.theme().textSecondary)
+            .backgroundColor(!this.firstBeatOnly ? this.theme().chipActiveBg : this.theme().chipBg)
+            .border({
+              width: 1,
+              color: !this.firstBeatOnly ? this.theme().primarySoft : this.theme().borderColor
+            })
+            .borderRadius(16)
+            .padding({ left: 12, right: 12 })
+            .height(38)
+            .margin({ right: 8, bottom: 8 })
+            .onClick((): void => {
+              this.withVmSync((): void => {
+                this.vm.setVoiceMode('every');
+              });
+            })
+
+          Button('仅首拍')
+            .fontSize(14)
+            .fontWeight(this.firstBeatOnly ? FontWeight.Bold : FontWeight.Regular)
+            .fontColor(this.firstBeatOnly ? this.theme().chipActiveText : this.theme().textSecondary)
+            .backgroundColor(this.firstBeatOnly ? this.theme().chipActiveBg : this.theme().chipBg)
+            .border({
+              width: 1,
+              color: this.firstBeatOnly ? this.theme().primarySoft : this.theme().borderColor
+            })
+            .borderRadius(16)
+            .padding({ left: 12, right: 12 })
+            .height(38)
+            .margin({ right: 8, bottom: 8 })
+            .onClick((): void => {
+              this.withVmSync((): void => {
+                this.vm.setVoiceMode('first');
+              });
+            })
         }
         .width('100%')
       }
@@ -794,53 +750,6 @@ struct Index {
   }
 
   @Builder
-  SelectChip(label: string, selected: boolean, onTap: () => void) {
-    Button(label)
-      .fontSize(14)
-      .fontWeight(selected ? FontWeight.Bold : FontWeight.Regular)
-      .fontColor(selected ? this.theme().chipActiveText : this.theme().textSecondary)
-      .backgroundColor(selected ? this.theme().chipActiveBg : this.theme().chipBg)
-      .border({
-        width: 1,
-        color: selected ? this.theme().primarySoft : this.theme().borderColor
-      })
-      .borderRadius(16)
-      .padding({ left: 12, right: 12 })
-      .height(38)
-      .margin({ right: 8, bottom: 8 })
-      .onClick((): void => {
-        onTap();
-      })
-  }
-
-  @Builder
-  StepperPanel(title: string, value: string, onDecrease: () => void, onIncrease: () => void) {
-    Column({ space: 10 }) {
-      Text(title)
-        .fontSize(13)
-        .fontColor(this.theme().textSecondary)
-
-      Row({ space: 10 }) {
-        this.CircleStepper('-', onDecrease);
-
-        Text(value)
-          .fontSize(26)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.theme().textPrimary)
-          .width(42)
-          .textAlign(TextAlign.Center)
-
-        this.CircleStepper('+', onIncrease);
-      }
-      .alignItems(VerticalAlign.Center)
-    }
-    .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-    .backgroundColor(this.theme().stepperPanelBg)
-    .borderRadius(18)
-    .margin({ bottom: 8 })
-  }
-
-  @Builder
   CircleStepper(label: string, onTap: () => void) {
     Button(label)
       .fontSize(20)
@@ -866,3 +775,4 @@ struct Index {
       .opacity(0)
   }
 }
+

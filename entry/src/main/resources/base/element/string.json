@@ -1,7 +1,7 @@
 {
   "string": [
-    { "name": "module_desc", "value": "节拍器模块" },
-    { "name": "EntryAbility_desc", "value": "节拍器主界面" },
-    { "name": "EntryAbility_label", "value": "节拍器" }
+    { "name": "module_desc", "value": "闻笺稳拍器功能模块" },
+    { "name": "EntryAbility_desc", "value": "闻笺稳拍器主界面" },
+    { "name": "EntryAbility_label", "value": "闻笺稳拍器" }
   ]
 }
